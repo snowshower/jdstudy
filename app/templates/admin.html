@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 대시보드 - JD-Match{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold m-0">📊 관리자 대시보드</h2>
+    <div class="d-flex gap-2">
+        <button id="resetMatchBtn" class="btn btn-outline-danger rounded-3 d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-counterclockwise"></i> 매칭 초기화
+        </button>
+        <button id="startMatchBtn" class="btn btn-primary rounded-3 d-flex align-items-center gap-2">
+            <i class="bi bi-rocket-takeoff"></i> 그룹 매칭 시작
+        </button>
+    </div>
+</div>
+
+<!-- KPI Widgets -->
+<div class="row g-4 mb-5">
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="text-muted small fw-bold text-uppercase mb-2">총 신청 인원</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <h3 class="fw-bold m-0">{{ crews|length }}명</h3>
+                    <div class="bg-primary bg-opacity-10 p-2 rounded-3">
+                        <i class="bi bi-people text-primary fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="text-muted small fw-bold text-uppercase mb-2">현재 편성된 조</div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <h3 class="fw-bold m-0" id="groupCount">{{ groups|length }}개</h3>
+                    <div class="bg-success bg-opacity-10 p-2 rounded-3">
+                        <i class="bi bi-grid-3x3-gap text-success fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Crew Status Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom p-4">
+        <h5 class="fw-bold m-0">신청 크루 현황</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle m-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="px-4 py-3 text-muted fw-semibold small">닉네임</th>
+                        <th class="px-4 py-3 text-muted fw-semibold small">희망 직무</th>
+                        <th class="px-4 py-3 text-muted fw-semibold small">목표 기업</th>
+                        <th class="px-4 py-3 text-muted fw-semibold small">관심 키워드</th>
+                        <th class="px-4 py-3 text-muted fw-semibold small">현재 소속</th>
+                        <th class="px-4 py-3 text-muted fw-semibold small text-center">액션</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for crew in crews %}
+                    <tr>
+                        <td class="px-4 py-3 fw-medium">{{ crew.nickname }}</td>
+                        <td class="px-4 py-3">
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-3">{{ crew.desired_job }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-muted">{{ crew.target_company or '-' }}</td>
+                        <td class="px-4 py-3">
+                            {% if crew.interest_keywords %}
+                                {% for kw in crew.interest_keywords.split(',') %}
+                                    <span class="badge bg-info bg-opacity-10 text-info small rounded-pill fw-normal mb-1">{{ kw.strip() }}</span>
+                                {% endfor %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if crew.group_member_info %}
+                                <span class="fw-bold text-primary">{{ crew.group_member_info.group.name }}</span>
+                            {% else %}
+                                <span class="text-muted small">미편성</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 me-2" 
+                                        onclick="openEditModal({{ crew.id }}, '{{ crew.target_company or '' }}', '{{ crew.interest_keywords or '' }}')">
+                                    정보 수정
+                                </button>
+                                <button class="btn btn-sm btn-outline-dark rounded-pill px-3" 
+                                        onclick="openMoveModal({{ crew.id }}, '{{ crew.nickname }}', {{ crew.group_member_info.group_id if crew.group_member_info else 'null' }})">
+                                    이동
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">신청한 크루가 없습니다.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Crew Modal -->
+<div class="modal fade" id="editCrewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="modal-title fw-bold">크루 정보 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editCrewForm">
+                    <input type="hidden" id="editCrewId" name="crew_id">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">목표 기업</label>
+                        <input type="text" id="editTargetCompany" name="target_company" class="form-control rounded-3" placeholder="목표 기업 입력">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">관심 키워드</label>
+                        <input type="text" id="editInterestKeywords" name="interest_keywords" class="form-control rounded-3" placeholder="키워드 입력 (쉼표 구분)">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">저장하기</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Move Group Modal -->
+<div class="modal fade" id="moveGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="modal-title fw-bold">그룹 이동</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted"><span id="moveCrewNickname" class="fw-bold text-dark"></span> 크루를 이동시킬 그룹을 선택하세요.</p>
+                <form id="moveGroupForm">
+                    <input type="hidden" id="moveCrewId" name="crew_id">
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">그룹 선택</label>
+                        <select id="newGroupId" name="new_group_id" class="form-select rounded-3" required>
+                            <option value="" disabled selected>그룹을 선택하세요</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100 py-2 fw-bold">이동 완료</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const editModal = new bootstrap.Modal(document.getElementById('editCrewModal'));
+    const moveModal = new bootstrap.Modal(document.getElementById('moveGroupModal'));
+
+    function openEditModal(id, company, keywords) {
+        document.getElementById('editCrewId').value = id;
+        document.getElementById('editTargetCompany').value = company;
+        document.getElementById('editInterestKeywords').value = keywords;
+        editModal.show();
+    }
+
+    function openMoveModal(id, nickname, currentGroupId) {
+        document.getElementById('moveCrewId').value = id;
+        document.getElementById('moveCrewNickname').innerText = nickname;
+        document.getElementById('newGroupId').value = currentGroupId || "";
+        moveModal.show();
+    }
+
+    document.getElementById('editCrewForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editCrewId').value;
+        const data = {
+            target_company: document.getElementById('editTargetCompany').value,
+            interest_keywords: document.getElementById('editInterestKeywords').value
+        };
+
+        try {
+            const response = await fetch(`/admin/crew/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                alert('수정되었습니다.');
+                window.location.reload();
+            } else {
+                alert('수정 실패');
+            }
+        } catch (err) { console.error(err); }
+    });
+
+    document.getElementById('moveGroupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            crew_id: parseInt(document.getElementById('moveCrewId').value),
+            new_group_id: parseInt(document.getElementById('newGroupId').value)
+        };
+
+        try {
+            const response = await fetch('/admin/move-member', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                alert('이동되었습니다.');
+                window.location.reload();
+            } else {
+                alert('이동 실패');
+            }
+        } catch (err) { console.error(err); }
+    });
+
+    document.getElementById('resetMatchBtn').addEventListener('click', async () => {
+        if (!confirm('매칭 데이터를 초기화하시겠습니까?')) return;
+        try {
+            const response = await fetch('/admin/clear-match', { method: 'POST' });
+            if (response.ok) {
+                alert('초기화되었습니다.');
+                window.location.reload();
+            } else {
+                alert('초기화 실패');
+            }
+        } catch (err) { console.error(err); }
+    });
+
+    document.getElementById('startMatchBtn').addEventListener('click', async () => {
+        if (!confirm('그룹 매칭을 시작하시겠습니까? 기존 매칭 데이터는 초기화됩니다.')) return;
+        try {
+            const response = await fetch('/admin/match', { method: 'POST' });
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                window.location.reload();
+            } else {
+                alert('매칭 실패');
+            }
+        } catch (err) { console.error(err); }
+    });
+</script>
+{% endblock %}

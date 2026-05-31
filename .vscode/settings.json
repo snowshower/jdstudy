@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "database": "sql_app.db",
+            "name": "jdcrew"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}

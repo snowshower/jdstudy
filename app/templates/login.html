@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}로그인 - JD-Match{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card p-4 shadow-sm">
+            <div class="card-body">
+                <h2 class="fw-bold mb-4 text-center">👋 반가워요!</h2>
+                <p class="text-muted text-center mb-4">로그인하여 스터디 매칭을 확인하세요.</p>
+                
+                <ul class="nav nav-pills nav-fill mb-4 bg-light p-1 rounded-3" id="loginTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-3 py-2" id="crew-tab" data-bs-toggle="pill" data-bs-target="#crew-login" type="button" role="tab">크루 로그인</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-3 py-2" id="admin-tab" data-bs-toggle="pill" data-bs-target="#admin-login" type="button" role="tab">관리자</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="loginTabContent">
+                    <!-- Crew Login -->
+                    <div class="tab-pane fade show active" id="crew-login" role="tabpanel">
+                        <form id="crewLoginForm">
+                            <div class="mb-3">
+                                <label for="nickname" class="form-label fw-medium">닉네임</label>
+                                <input type="text" class="form-control rounded-3 py-2" id="nickname" name="nickname" placeholder="닉네임 입력" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="password" class="form-label fw-medium">비밀번호</label>
+                                <input type="password" class="form-control rounded-3 py-2" id="password" name="password" placeholder="비밀번호 입력" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 py-2 fs-6">로그인</button>
+                        </form>
+                    </div>
+
+                    <!-- Admin Login -->
+                    <div class="tab-pane fade" id="admin-login" role="tabpanel">
+                        <form id="adminLoginForm">
+                            <div class="mb-3">
+                                <label for="admin_id" class="form-label fw-medium">관리자 ID</label>
+                                <input type="text" class="form-control rounded-3 py-2" id="admin_id" name="nickname" placeholder="관리자 ID 입력" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="admin_pw" class="form-label fw-medium">비밀번호</label>
+                                <input type="password" class="form-control rounded-3 py-2" id="admin_pw" name="password" placeholder="비밀번호 입력" required>
+                            </div>
+                            <button type="submit" class="btn btn-dark w-100 py-2 fs-6">관리자 로그인</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <span class="text-muted">아직 크루가 아니신가요?</span>
+                    <a href="/signup-page" class="text-decoration-none fw-medium ms-1">신청하기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-pills .nav-link.active {
+        background-color: var(--primary-color);
+    }
+    .nav-pills .nav-link {
+        color: var(--text-muted);
+    }
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function handleLogin(formId, url, redirectUrl) {
+        const form = document.getElementById(formId);
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const jsonData = {};
+            formData.forEach((value, key) => { jsonData[key] = value; });
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jsonData),
+                });
+
+                if (response.ok) {
+                    window.location.href = redirectUrl;
+                } else {
+                    const error = await response.json();
+                    alert('로그인 실패: ' + (error.detail || '정보를 확인해주세요.'));
+                }
+            } catch (err) {
+                console.error(err);
+                alert('서버 오류가 발생했습니다.');
+            }
+        });
+    }
+
+    handleLogin('crewLoginForm', '/login', '/results-page');
+    handleLogin('adminLoginForm', '/admin/login', '/admin-page');
+</script>
+{% endblock %}

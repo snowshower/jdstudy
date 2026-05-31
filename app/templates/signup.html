@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}크루 신청 - JD-Match{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card p-4 shadow-sm">
+            <div class="card-body">
+                <h2 class="fw-bold mb-4 text-center">🌱 크루 신청</h2>
+                <p class="text-muted text-center mb-4">JD 분석 스터디의 새로운 크루가 되어보세요.</p>
+                
+                <form id="signupForm" action="/register" method="post">
+                    <div class="mb-3">
+                        <label for="nickname" class="form-label fw-medium">닉네임</label>
+                        <input type="text" class="form-control rounded-3 py-2" id="nickname" name="nickname" placeholder="사용할 닉네임을 입력하세요" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-medium">비밀번호</label>
+                        <input type="password" class="form-control rounded-3 py-2" id="password" name="password" placeholder="비밀번호를 입력하세요" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="desired_job" class="form-label fw-medium">희망 직무</label>
+                        <select class="form-select rounded-3 py-2" id="desired_job" name="desired_job" required>
+                            <option value="" selected disabled>직무를 선택하세요</option>
+                            <option value="Backend">백엔드 (Backend)</option>
+                            <option value="Frontend">프론트엔드 (Frontend)</option>
+                            <option value="Data">데이터 엔지니어링/과학 (Data)</option>
+                            <option value="DevOps">데브옵스 (DevOps)</option>
+                            <option value="Mobile">모바일 (iOS/Android)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="target_company" class="form-label fw-medium">목표 기업 (선택)</label>
+                        <input type="text" class="form-control rounded-3 py-2" id="target_company" name="target_company" placeholder="예: 네이버, 카카오, 토스 등">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="interest_keywords" class="form-label fw-medium">관심 기술 키워드 (선택)</label>
+                        <input type="text" class="form-control rounded-3 py-2" id="interest_keywords" name="interest_keywords" placeholder="예: Spring Boot, React, Kubernetes">
+                        <div class="form-text">쉼표(,)로 구분하여 입력해 주세요.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fs-5">신청 완료</button>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <span class="text-muted">이미 크루이신가요?</span>
+                    <a href="/login-page" class="text-decoration-none fw-medium ms-1">로그인하기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25 margin-top: 0.5rem;rem rgba(37, 99, 235, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.from_dict(formData.entries());
+        // Simple conversion for multi-part to JSON
+        const jsonData = {};
+        formData.forEach((value, key) => {
+            jsonData[key] = value;
+        });
+
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(jsonData),
+            });
+
+            if (response.ok) {
+                alert('크루 신청이 완료되었습니다! 로그인해 주세요.');
+                window.location.href = '/login-page';
+            } else {
+                const error = await response.json();
+                alert('신청 실패: ' + error.detail);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('서버 오류가 발생했습니다.');
+        }
+    });
+</script>
+{% endblock %}

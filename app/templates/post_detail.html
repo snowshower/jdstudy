@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - JD-Match{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/board-page" class="text-decoration-none">인사이트 게시판</a></li>
+                <li class="breadcrumb-item active" aria-current="page">게시글 상세보기</li>
+            </ol>
+        </nav>
+
+        <div class="card border-0 shadow-sm p-4 p-md-5">
+            <div class="mb-4">
+                {% if post.tag %}
+                    <span class="badge bg-primary bg-opacity-10 text-primary mb-3">{{ post.tag }}</span>
+                {% endif %}
+                <h1 class="fw-bold mb-3">{{ post.title }}</h1>
+                <div class="d-flex align-items-center gap-3 text-muted">
+                    <span class="fw-medium text-dark"><i class="bi bi-person me-1"></i> {{ post.author_nickname }}</span>
+                    <span><i class="bi bi-calendar3 me-1"></i> {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+            </div>
+
+            <hr class="my-4 opacity-10">
+
+            <div class="post-content fs-5 line-height-lg mb-5" style="white-space: pre-wrap;">
+                {{ post.content }}
+            </div>
+
+            {% if post.link %}
+            <div class="bg-light p-4 rounded-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="small text-muted mb-1">참고 링크</div>
+                    <div class="fw-bold text-truncate" style="max-width: 400px;">{{ post.link }}</div>
+                </div>
+                <a href="{{ post.link }}" target="_blank" class="btn btn-primary rounded-pill px-4">링크 열기</a>
+            </div>
+            {% endif %}
+
+            {% if user and (post.author_nickname == user.nickname or user.is_admin) %}
+            <div class="mt-5 pt-4 border-top d-flex gap-2">
+                <button class="btn btn-outline-danger rounded-pill px-4" onclick="deletePost({{ post.id }})">삭제하기</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .line-height-lg {
+        line-height: 1.8;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function deletePost(postId) {
+        if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
+        try {
+            const response = await fetch(`/board/${postId}`, { method: 'DELETE' });
+            if (response.ok) {
+                window.location.href = '/board-page';
+            } else {
+                alert('삭제 실패');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+</script>
+{% endblock %}

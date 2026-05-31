@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}인사이트 게시판 - JD-Match{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h2 class="fw-bold mb-2">💡 인사이트 게시판</h2>
+        <p class="text-muted m-0">JD 분석 결과와 유용한 정보를 크루들과 공유해보세요.</p>
+    </div>
+    <button class="btn btn-primary rounded-pill px-4 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#writePostModal">
+        <i class="bi bi-pencil-square"></i> 글쓰기
+    </button>
+</div>
+
+<div class="d-flex flex-column gap-3">
+    {% for post in posts %}
+    <div class="card border-0 shadow-sm hover-shadow transition">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    {% if post.tag %}
+                        <span class="badge bg-primary bg-opacity-10 text-primary mb-2">{{ post.tag }}</span>
+                    {% endif %}
+                    <h4 class="fw-bold mb-1">
+                        <a href="/board-page/{{ post.id }}" class="text-decoration-none text-dark">{{ post.title }}</a>
+                    </h4>
+                </div>
+                <div class="text-end">
+                    <div class="fw-medium text-dark">{{ post.author_nickname }}</div>
+                    <div class="text-muted small">{{ post.created_at.strftime('%Y-%m-%d') }}</div>
+                </div>
+            </div>
+            
+            {% if post.content %}
+            <p class="text-muted mb-3 text-truncate-2">{{ post.content }}</p>
+            {% endif %}
+
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <a href="{{ post.link }}" target="_blank" class="text-primary text-decoration-none small fw-semibold">원문 링크 보기 &rarr;</a>
+                
+                {% if user and (post.author_nickname == user.nickname or user.is_admin) %}
+                <div class="dropdown">
+                    <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                        <li><button class="dropdown-item text-danger" onclick="deletePost({{ post.id }})">삭제</button></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+        <i class="bi bi-journal-text text-muted fs-1 mb-3 d-block"></i>
+        <h5 class="fw-bold">아직 게시글이 없습니다</h5>
+        <p class="text-muted">첫 번째 인사이트를 공유해보세요!</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Write Post Modal -->
+<div class="modal fade" id="writePostModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="modal-title fw-bold">인사이트 공유하기</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="postForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">제목</label>
+                        <input type="text" name="title" class="form-control rounded-3" placeholder="제목을 입력하세요" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">링크 (URL)</label>
+                        <input type="url" name="link" class="form-control rounded-3" placeholder="공유할 링크 주소" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">태그 (선택)</label>
+                        <input type="text" name="tag" class="form-control rounded-3" placeholder="예: Backend, 채용정보, JD분석">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">설명 (선택)</label>
+                        <textarea name="content" class="form-control rounded-3" rows="3" placeholder="간략한 설명을 덧붙여주세요"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">게시하기</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-shadow:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025) !important;
+    }
+    .transition {
+        transition: all 0.2s ease-in-out;
+    }
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const jsonData = {};
+        formData.forEach((value, key) => { jsonData[key] = value; });
+
+        try {
+            const response = await fetch('/board', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jsonData),
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('등록 실패: ' + (error.detail || '오류가 발생했습니다.'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('서버 오류가 발생했습니다.');
+        }
+    });
+
+    async function deletePost(postId) {
+        if (!confirm('게시글을 삭제하시겠습니까?')) return;
+        
+        try {
+            const response = await fetch(`/board/${postId}`, { method: 'DELETE' });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('삭제 실패');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+</script>
+{% endblock %}
