@@ -1,113 +1,108 @@
 {% extends "base.html" %}
 
-{% block title %}인사이트 게시판 - JD-Match{% endblock %}
+{% block title %}인사이트 게시판 - JD-MATCH{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-5">
+<div class="d-flex justify-content-between align-items-end mb-5 border-bottom pb-4" style="border-color: rgba(255,255,255,0.1) !important;">
     <div>
-        <h2 class="fw-bold mb-2">💡 인사이트 게시판</h2>
-        <p class="text-muted m-0">JD 분석 결과와 유용한 정보를 크루들과 공유해보세요.</p>
+        <h2 class="fw-bold m-0 text-gradient" style="font-size: 2rem; letter-spacing: -1px;">지식 아카이브</h2>
+        <p class="small mt-1 mb-0" style="color: var(--text-muted);">크루들이 분석한 JD 인사이트와 기술 로그를 확인하세요.</p>
     </div>
-    <button class="btn btn-primary rounded-pill px-4 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#writePostModal">
-        <i class="bi bi-pencil-square"></i> 글쓰기
+    <button class="btn-primary-neon" data-bs-toggle="modal" data-bs-target="#writePostModal">
+        <i class="bi bi-plus-lg"></i> 새 인사이트 공유
     </button>
 </div>
 
-<div class="d-flex flex-column gap-3">
-    {% for post in posts %}
-    <div class="card border-0 shadow-sm hover-shadow transition">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
+<div class="table-container">
+    <table class="crew-table">
+        <thead>
+            <tr>
+                <th>태그</th>
+                <th>제목</th>
+                <th>작성자</th>
+                <th>등록일</th>
+                <th class="text-center">관리</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for post in posts %}
+            <tr>
+                <td>
                     {% if post.tag %}
-                        <span class="badge bg-primary bg-opacity-10 text-primary mb-2">{{ post.tag }}</span>
+                        <span class="neon-badge">{{ post.tag }}</span>
+                    {% else %}
+                        <span class="neon-badge" style="opacity: 0.5;">일반</span>
                     {% endif %}
-                    <h4 class="fw-bold mb-1">
-                        <a href="/board-page/{{ post.id }}" class="text-decoration-none text-dark">{{ post.title }}</a>
-                    </h4>
-                </div>
-                <div class="text-end">
-                    <div class="fw-medium text-dark">{{ post.author_nickname }}</div>
-                    <div class="text-muted small">{{ post.created_at.strftime('%Y-%m-%d') }}</div>
-                </div>
-            </div>
-            
-            {% if post.content %}
-            <p class="text-muted mb-3 text-truncate-2">{{ post.content }}</p>
-            {% endif %}
-
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <a href="{{ post.link }}" target="_blank" class="text-primary text-decoration-none small fw-semibold">원문 링크 보기 &rarr;</a>
-                
-                {% if user and (post.author_nickname == user.nickname or user.is_admin) %}
-                <div class="dropdown">
-                    <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
-                        <i class="bi bi-three-dots"></i>
+                </td>
+                <td>
+                    <a href="/board-page/{{ post.id }}" class="text-decoration-none fw-bold" style="color: var(--text-main); font-size: 0.95rem;">
+                        {{ post.title }}
+                    </a>
+                    {% if post.content %}
+                        <div class="small mt-1 text-truncate" style="color: var(--text-muted); max-width: 450px; font-size: 0.75rem;">{{ post.content }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span style="color: var(--text-secondary); font-size: 0.85rem;">{{ post.author_nickname }}</span>
+                </td>
+                <td>
+                    <span style="color: var(--text-muted); opacity: 0.7; font-size: 0.8rem;">{{ post.created_at.strftime('%Y.%m.%d') }}</span>
+                </td>
+                <td class="text-center">
+                    {% if user and (post.author_nickname == user.nickname or user.is_admin) %}
+                    <button class="btn-secondary-metallic" style="padding: 4px 12px; font-size: 0.65rem;" onclick="deletePost({{ post.id }})">
+                        삭제
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                        <li><button class="dropdown-item text-danger" onclick="deletePost({{ post.id }})">삭제</button></li>
-                    </ul>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <div class="text-center py-5 bg-white rounded-4 shadow-sm">
-        <i class="bi bi-journal-text text-muted fs-1 mb-3 d-block"></i>
-        <h5 class="fw-bold">아직 게시글이 없습니다</h5>
-        <p class="text-muted">첫 번째 인사이트를 공유해보세요!</p>
-    </div>
-    {% endfor %}
+                    {% else %}
+                    <span style="color: var(--text-muted); opacity: 0.25;">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center py-5">
+                    <div class="py-5">
+                        <i class="bi bi-journal-x fs-1 mb-3 d-block" style="color: var(--text-muted); opacity: 0.25;"></i>
+                        <p style="color: var(--text-muted);">등록된 게시글이 없습니다.</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
 <!-- Write Post Modal -->
 <div class="modal fade" id="writePostModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0 p-4 pb-0">
-                <h5 class="modal-title fw-bold">인사이트 공유하기</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content dashboard-card p-0 shadow-lg" style="border-radius: 0px !important;">
+            <div class="p-4 border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                <h5 class="fw-bold m-0" style="font-size: 1.1rem;">새 인사이트 등록</h5>
             </div>
-            <div class="modal-body p-4">
+            <div class="p-4">
                 <form id="postForm">
                     <div class="mb-3">
-                        <label class="form-label fw-medium">제목</label>
-                        <input type="text" name="title" class="form-control rounded-3" placeholder="제목을 입력하세요" required>
+                        <label class="metallic-label">인사이트 제목</label>
+                        <input type="text" name="title" class="metallic-input" placeholder="제목을 입력하세요" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-medium">링크 (URL)</label>
-                        <input type="url" name="link" class="form-control rounded-3" placeholder="공유할 링크 주소" required>
+                        <label class="metallic-label">참조 URL</label>
+                        <input type="url" name="link" class="metallic-input" placeholder="https://..." required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-medium">태그 (선택)</label>
-                        <input type="text" name="tag" class="form-control rounded-3" placeholder="예: Backend, 채용정보, JD분석">
+                        <label class="metallic-label">카테고리 태그</label>
+                        <input type="text" name="tag" class="metallic-input" placeholder="예: 아키텍처, 성능최적화">
                     </div>
                     <div class="mb-4">
-                        <label class="form-label fw-medium">설명 (선택)</label>
-                        <textarea name="content" class="form-control rounded-3" rows="3" placeholder="간략한 설명을 덧붙여주세요"></textarea>
+                        <label class="metallic-label">상세 설명</label>
+                        <textarea name="content" class="metallic-input" rows="4" placeholder="인사이트의 핵심 내용을 요약해 주세요." style="resize: none;"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">게시하기</button>
+                    <button type="submit" class="btn-primary-neon w-100 py-3" style="font-size: 0.9rem;">인사이트 커밋</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .hover-shadow:hover {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025) !important;
-    }
-    .transition {
-        transition: all 0.2s ease-in-out;
-    }
-    .text-truncate-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;  
-        overflow: hidden;
-    }
-</style>
 {% endblock %}
 
 {% block scripts %}
@@ -129,11 +124,11 @@
                 window.location.reload();
             } else {
                 const error = await response.json();
-                alert('등록 실패: ' + (error.detail || '오류가 발생했습니다.'));
+                alert('오류: ' + error.detail);
             }
         } catch (err) {
             console.error(err);
-            alert('서버 오류가 발생했습니다.');
+            alert('네트워크 연결 실패');
         }
     });
 

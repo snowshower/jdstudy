@@ -3,123 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}JD-Match{% endblock %}</title>
-    <!-- Bootstrap 5 CSS -->
+    <title>{% block title %}JD-Match NEON{% endblock %}</title>
+    <!-- Bootstrap 5 CSS (Base Grid Only) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Fonts: Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary-color: #2563EB;
-            --bg-color: #F8FAFC;
-            --text-dark: #1E293B;
-            --text-muted: #64748B;
-            --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-dark);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .navbar {
-            background-color: white;
-            border-bottom: 1px solid #E2E8F0;
-            padding: 1rem 0;
-        }
-
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--text-dark);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .nav-link {
-            color: var(--text-muted);
-            font-weight: 500;
-            padding: 0.5rem 1rem !important;
-            transition: color 0.2s;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: var(--primary-color) !important;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            font-weight: 600;
-            padding: 0.6rem 1.2rem;
-            border-radius: 0.5rem;
-        }
-
-        .btn-outline-primary {
-            color: var(--primary-color);
-            border-color: var(--primary-color);
-            font-weight: 600;
-            border-radius: 0.5rem;
-        }
-
-        .card {
-            border: none;
-            border-radius: 0.75rem;
-            box-shadow: var(--card-shadow);
-        }
-
-        .rounded-3 {
-            border-radius: 0.75rem !important;
-        }
-
-        footer {
-            padding: 2rem 0;
-            color: var(--text-muted);
-            font-size: 0.875rem;
-        }
-    </style>
+    <!-- Custom Neon Glassmorphism CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
     {% block head %}{% endblock %}
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg sticky-top">
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <span class="fs-4">🌱 JD-Match</span>
+                <i class="bi bi-cpu-fill text-gradient me-2"></i>JD-MATCH
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'signup' %}active{% endif %}" href="/signup-page">크루 신청</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'results' %}active{% endif %}" href="/results-page">매칭 결과 조회</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'board' %}active{% endif %}" href="/board-page">인사이트 게시판</a>
-                    </li>
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link {% if active_page == 'signup' %}active{% endif %}" href="/signup-page">신청하기</a></li>
+                    <li class="nav-item"><a class="nav-link {% if active_page == 'results' %}active{% endif %}" href="/results-page">매칭현황</a></li>
+                    <li class="nav-item"><a class="nav-link {% if active_page == 'board' %}active{% endif %}" href="/board-page">인사이트</a></li>
                     {% if user and user.is_admin %}
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'admin' %}active{% endif %}" href="/admin-page">관리자</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link {% if active_page == 'admin' %}active{% endif %}" href="/admin-page">관리자</a></li>
                     {% endif %}
                 </ul>
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-4">
                     {% if user %}
-                        <span class="text-muted fw-medium">{{ user.nickname }}님</span>
+                        <span class="small fw-bold" style="color: var(--text-muted);">{{ user.nickname }}</span>
                         <form action="/logout" method="post" class="m-0">
-                            <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3">로그아웃</button>
+                            <button type="submit" class="btn-secondary-metallic" style="padding: 8px 20px; font-size: 0.8rem;">로그아웃</button>
                         </form>
                     {% else %}
-                        <a href="/login-page" class="btn btn-outline-primary btn-sm rounded-pill px-3">로그인</a>
-                        <a href="/signup-page" class="btn btn-primary btn-sm rounded-pill px-3">시작하기</a>
+                        <a href="/login-page" class="nav-link m-0">로그인</a>
+                        <a href="/signup-page" class="btn-primary-neon">시작하기 <i class="bi bi-chevron-right fs-small"></i></a>
                     {% endif %}
                 </div>
             </div>
@@ -132,7 +52,7 @@
 
     <footer class="text-center">
         <div class="container">
-            <p>&copy; 2026 JD-Match. All rights reserved.</p>
+            <p class="small">&copy; 2026 JD-MATCH TECH-METALLIC. 모든 시스템 정상 작동 중.</p>
         </div>
     </footer>
 

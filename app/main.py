@@ -11,6 +11,65 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="JD 분석 스터디 매칭 시스템")
 
+# --- Startup Event: Initial Data Seed ---
+@app.on_event("startup")
+def seed_data():
+    db = database.SessionLocal()
+    try:
+        # Check if any crew already exists
+        if db.query(models.Crew).count() == 0:
+            print("🚀 초기 데이터가 없습니다. 20명의 테스트 크루를 생성합니다...")
+            test_crews = [
+    # 🟢 1 그룹: 카카오 계열 (7명) -> 1단계에서 카카오A(4명) / 카카오B(3명)로 칼 분할 검증용
+    {"nickname": "카카오콘", "target_company": "카카오", "interest_keywords": "Java, Spring Boot, MSA, 인프라", "desired_job": "backend", "password": "password123"},
+    {"nickname": "페이마스터", "target_company": "카카오페이", "interest_keywords": "Spring Boot, JPA, Querydsl, 데이터베이스", "desired_job": "backend", "password": "password123"},
+    {"nickname": "뱅크보이", "target_company": "카카오뱅크", "interest_keywords": "Java, Spring, MySQL, 트랜잭션", "desired_job": "backend", "password": "password123"},
+    {"nickname": "택시드라이버", "target_company": "카카오모빌리티", "interest_keywords": "Java, Spring Boot, AWS, CI/CD", "desired_job": "backend", "password": "password123"},
+    {"nickname": "엔터라이언", "target_company": "카카오엔터테인먼트", "interest_keywords": "Java, Spring Boot, MSA, Docker", "desired_job": "backend", "password": "password123"},
+    {"nickname": "웹툰러버", "target_company": "카카오웹툰", "interest_keywords": "Java, Spring, 대용량트래픽, 모니터링", "desired_job": "backend", "password": "password123"},
+    {"nickname": "옐로우어피치", "target_company": "kakao", "interest_keywords": "Spring Boot, JPA, MySQL, 성능최적화", "desired_job": "backend", "password": "password123"},
+
+    # 🟡 2 그룹: 네이버 계열 (4명) -> 1단계에서 정확히 네이버 조(4명)로 꽉 차고 락이 걸리는지 검증용
+    {"nickname": "그린팩토리", "target_company": "네이버", "interest_keywords": "Java, Spring Boot, MSA, Docker", "desired_job": "backend", "password": "password123"},
+    {"nickname": "라인크루", "target_company": "네이버파이낸셜", "interest_keywords": "Spring Boot, Docker, Kubernetes, AWS", "desired_job": "backend", "password": "password123"},
+    {"nickname": "쿠키마스터", "target_company": "네이버웹툰", "interest_keywords": "Java, MSA, Spring Cloud, 인프라", "desired_job": "backend", "password": "password123"},
+    {"nickname": "클로바AI", "target_company": "NAVER", "interest_keywords": "Java, Spring Boot, AWS, CI/CD", "desired_job": "backend", "password": "password123"},
+
+    # 🔵 3 그룹: 토스 계열 (3명) -> 1단계에서 뼈대(3명) 형성 후 기술 핏이 맞는 낙오자를 유도하는지 검증용
+    {"nickname": "금융혁신", "target_company": "토스", "interest_keywords": "Spring Boot, Redis, 동시성제어", "desired_job": "backend", "password": "password123"},
+    {"nickname": "스마트커머스", "target_company": "토스페이먼츠", "interest_keywords": "Java, Spring, Redis, 성능최적화", "desired_job": "backend", "password": "password123"},
+    {"nickname": "개미투자자", "target_company": "토스증권", "interest_keywords": "Java, Spring Boot, 대용량 데이터", "desired_job": "backend", "password": "password123"},
+
+    # 🟣 4 그룹: 배민/우형 계열 (2명) -> 🛑 이번엔 3명 미만이라 1단계 뼈대 생성에 실패하고 낙오자 풀로 빠지는지 검증용
+    {"nickname": "라이더", "target_company": "배민", "interest_keywords": "Java, Spring, MySQL, JPA", "desired_job": "backend", "password": "password123"},
+    {"nickname": "우아한인턴", "target_company": "우아한형제들", "interest_keywords": "Java, Querydsl, MySQL, 아키텍처", "desired_job": "backend", "password": "password123"},
+
+    # 🔴 5 그룹: 기타 소수 낙오자군 (4명) -> 기술 스택에 맞춰 빈자리로 스며들거나 5조를 형성할 인원
+    {"nickname": "로켓배송", "target_company": "쿠팡", "interest_keywords": "Java, Spring, Redis, 대용량 데이터", "desired_job": "backend", "password": "password123"}, # -> 토스 조(Redis) 저격
+    {"nickname": "이웃주민", "target_company": "당근마켓", "interest_keywords": "Java, Spring Boot, MySQL, JPA", "desired_job": "backend", "password": "password123"}, # -> 배민 크루들과의 결집 저격
+    {"nickname": "패션피플", "target_company": "무신사", "interest_keywords": "Java, Spring Boot, MSA, Docker", "desired_job": "backend", "password": "password123"}, # -> 카카오B 조 인프라 핏 저격
+    {"nickname": "트래블러", "target_company": "야놀자", "interest_keywords": "Java, Spring, 웹소켓, 실시간", "desired_job": "backend", "password": "password123"}
+]
+            
+            for crew_data in test_crews:
+                hashed_pw = auth.get_password_hash(crew_data["password"])
+                db_crew = models.Crew(
+                    nickname=crew_data["nickname"],
+                    target_company=crew_data["target_company"],
+                    interest_keywords=crew_data["interest_keywords"],
+                    desired_job=crew_data["desired_job"],
+                    hashed_password=hashed_pw
+                )
+                db.add(db_crew)
+            
+            db.commit()
+            print("✅ 20명의 테스트 데이터 삽입이 완료되었습니다.")
+    except Exception as e:
+        print(f"❌ 데이터 삽입 중 오류 발생: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
 # Session management
 app.add_middleware(SessionMiddleware, secret_key="super-secret-key")
 

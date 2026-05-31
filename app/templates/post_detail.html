@@ -1,48 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}{{ post.title }} - JD-Match{% endblock %}
+{% block title %}{{ post.title }} - JD-MATCH{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/board-page" class="text-decoration-none">인사이트 게시판</a></li>
-                <li class="breadcrumb-item active" aria-current="page">게시글 상세보기</li>
-            </ol>
-        </nav>
+    <div class="col-lg-9">
+        <!-- Breadcrumb / Back Navigation -->
+        <div class="mb-4">
+            <a href="/board-page" class="text-decoration-none small d-inline-flex align-items-center gap-2 hover-accent" style="color: var(--text-muted);">
+                <i class="bi bi-arrow-left"></i> 지식 아카이브로 돌아가기
+            </a>
+        </div>
 
-        <div class="card border-0 shadow-sm p-4 p-md-5">
-            <div class="mb-4">
+        <div class="dashboard-card" style="padding: 3rem !important;">
+            <div class="mb-5 border-bottom pb-4" style="border-color: rgba(255,255,255,0.1) !important;">
                 {% if post.tag %}
-                    <span class="badge bg-primary bg-opacity-10 text-primary mb-3">{{ post.tag }}</span>
+                    <span class="neon-badge mb-3">{{ post.tag }}</span>
                 {% endif %}
-                <h1 class="fw-bold mb-3">{{ post.title }}</h1>
-                <div class="d-flex align-items-center gap-3 text-muted">
-                    <span class="fw-medium text-dark"><i class="bi bi-person me-1"></i> {{ post.author_nickname }}</span>
-                    <span><i class="bi bi-calendar3 me-1"></i> {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <h1 class="fw-bold mb-3 text-gradient" style="font-size: 2.5rem; letter-spacing: -1.5px;">{{ post.title }}</h1>
+                
+                <div class="d-flex align-items-center gap-4 mt-4" style="color: var(--text-muted);">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-white bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi bi-person-fill small" style="color: var(--text-main);"></i>
+                        </div>
+                        <span class="fw-bold" style="color: var(--text-main); font-size: 0.9rem;">{{ post.author_nickname }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 opacity-75">
+                        <i class="bi bi-calendar3 small"></i>
+                        <span style="font-size: 0.85rem;">{{ post.created_at.strftime('%Y년 %m월 %d일 %H:%M') }}</span>
+                    </div>
                 </div>
             </div>
 
-            <hr class="my-4 opacity-10">
-
-            <div class="post-content fs-5 line-height-lg mb-5" style="white-space: pre-wrap;">
+            <!-- Content Block -->
+            <div class="post-content mb-5" style="font-size: 1.05rem; line-height: 1.8; color: var(--text-secondary);">
                 {{ post.content }}
             </div>
 
+            <!-- Link Block -->
             {% if post.link %}
-            <div class="bg-light p-4 rounded-4 d-flex align-items-center justify-content-between">
-                <div>
-                    <div class="small text-muted mb-1">참고 링크</div>
-                    <div class="fw-bold text-truncate" style="max-width: 400px;">{{ post.link }}</div>
+            <div class="dashboard-card p-4 d-flex align-items-center justify-content-between mb-5" style="background: rgba(255,255,255,0.02);">
+                <div class="overflow-hidden me-3">
+                    <span class="label d-block mb-1">참조 리소스</span>
+                    <div class="text-truncate fw-medium" style="color: var(--accent-text); font-size: 0.9rem;">{{ post.link }}</div>
                 </div>
-                <a href="{{ post.link }}" target="_blank" class="btn btn-primary rounded-pill px-4">링크 열기</a>
+                <a href="{{ post.link }}" target="_blank" class="btn-secondary-metallic" style="white-space: nowrap; padding: 10px 24px;">
+                    리소스 열기 <i class="bi bi-box-arrow-up-right ms-2 small"></i>
+                </a>
             </div>
             {% endif %}
 
+            <!-- Actions -->
             {% if user and (post.author_nickname == user.nickname or user.is_admin) %}
-            <div class="mt-5 pt-4 border-top d-flex gap-2">
-                <button class="btn btn-outline-danger rounded-pill px-4" onclick="deletePost({{ post.id }})">삭제하기</button>
+            <div class="mt-5 pt-4 border-top d-flex justify-content-end gap-3" style="border-color: rgba(255,255,255,0.1) !important;">
+                <button class="btn-secondary-metallic" style="border-color: rgba(255,50,50,0.3); color: #ff5555 !important;" onclick="deletePost({{ post.id }})">
+                    인사이트 삭제
+                </button>
             </div>
             {% endif %}
         </div>
@@ -50,8 +64,12 @@
 </div>
 
 <style>
-    .line-height-lg {
-        line-height: 1.8;
+    .hover-accent:hover {
+        color: var(--accent-text) !important;
+        transition: color 0.2s ease;
+    }
+    .post-content {
+        white-space: pre-wrap;
     }
 </style>
 {% endblock %}
@@ -59,13 +77,13 @@
 {% block scripts %}
 <script>
     async function deletePost(postId) {
-        if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
+        if (!confirm('정말로 이 인사이트를 영구 삭제하시겠습니까?')) return;
         try {
             const response = await fetch(`/board/${postId}`, { method: 'DELETE' });
             if (response.ok) {
                 window.location.href = '/board-page';
             } else {
-                alert('삭제 실패');
+                alert('삭제 실패: 시스템 권한을 확인하세요.');
             }
         } catch (err) {
             console.error(err);

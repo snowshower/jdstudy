@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}매칭 결과 - JD-Match{% endblock %}
+{% block title %}매칭 결과 - JD-MATCH{% endblock %}
 
 {% block content %}
-<div class="mb-5">
-    <h2 class="fw-bold mb-2">🚀 매칭 결과 확인</h2>
-    <p class="text-muted">함께 성장할 멋진 크루들을 확인해보세요!</p>
+<div class="text-center mb-5 mt-5">
+    <span class="neon-badge mb-3">매칭 프로토콜 활성화</span>
+    <h1 class="fw-bold text-gradient" style="font-size: 3rem; letter-spacing: -2px;">매칭 결과 리포트</h1>
+    <p class="small" style="color: var(--text-muted);">정예 테크 크루가 최적의 조합으로 편성되었습니다.</p>
 </div>
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
@@ -18,92 +19,91 @@
     {% endfor %}
 
     <div class="col">
-        <div class="card h-100 border-0 shadow-sm {% if is_my_group %}ring-primary{% endif %}">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h5 class="fw-bold m-0">{{ group.name }}</h5>
-                    {% if is_my_group %}
-                        <span class="badge bg-primary rounded-pill px-3">MY GROUP</span>
-                    {% endif %}
-                </div>
+        <div class="dashboard-card h-100 {% if is_my_group %}active-connection{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold m-0" style="font-size: 1.1rem; letter-spacing: -0.5px;">{{ group.name }}</h3>
+                {% if is_my_group %}
+                    <span class="neon-badge" style="background: var(--accent-glow); color: white; border-color: transparent; font-size: 0.65rem;">나의 그룹</span>
+                {% endif %}
+            </div>
 
-                <div class="mb-4 d-flex flex-column gap-2">
+            <div class="mb-4">
+                <span class="label d-block mb-2">주요 키워드</span>
+                <div class="d-flex flex-wrap gap-2">
                     {% if group.common_companies %}
-                        <div class="d-flex flex-wrap gap-1 align-items-center">
-                            <span class="text-muted small fw-bold me-2">🏢 목표 기업:</span>
-                            {% for comp in group.common_companies.split(',') %}
-                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 small">{{ comp.strip() }}</span>
-                            {% endfor %}
-                        </div>
+                        {% for comp in group.common_companies.split(',') %}
+                            <span class="company-tag">{{ comp.strip() }}</span>
+                        {% endfor %}
                     {% endif %}
-                    
                     {% if group.common_keywords %}
-                        <div class="d-flex flex-wrap gap-1 align-items-center">
-                            <span class="text-muted small fw-bold me-2">🛠 기술 스택:</span>
-                            {% for kw in group.common_keywords.split(',') %}
-                                <span class="badge bg-mint text-white rounded-pill px-3 py-1 small">{{ kw.strip() }}</span>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    
-                    {% if not group.common_companies and not group.common_keywords %}
-                        <span class="text-muted small">공통 데이터 탐색 중...</span>
+                        {% for kw in group.common_keywords.split(',') %}
+                            <span class="neon-badge" style="font-size: 0.65rem;">{{ kw.strip() }}</span>
+                        {% endfor %}
                     {% endif %}
                 </div>
+            </div>
 
-                <div class="member-list">
-                    <h6 class="text-muted small fw-bold text-uppercase mb-3">크루 명단</h6>
-                    <div class="d-flex flex-column gap-3">
-                        {% for member in group.members %}
-                        <div class="p-3 rounded-3 bg-light bg-opacity-50 border border-white">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="fw-bold {% if user and member.crew.nickname == user.nickname %}text-primary{% endif %}">
+            <div class="mt-4">
+                <span class="label d-block mb-3">크루 명단</span>
+                <div class="table-container" style="margin-top: 0; background: transparent; border: none; box-shadow: none;">
+                    <table class="crew-table">
+                        <tbody>
+                            {% for member in group.members %}
+                            <tr>
+                                <td class="nickname {% if user and member.crew.nickname == user.nickname %}text-highlight{% endif %}">
                                     {{ member.crew.nickname }}
-                                    {% if user and member.crew.nickname == user.nickname %}(나){% endif %}
-                                </span>
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary border-0 small fw-normal">{{ member.crew.desired_job }}</span>
-                            </div>
-                            
-                            <div class="small mb-1">
-                                <span class="text-muted">🏢 목표:</span> 
-                                <span class="fw-medium">{{ member.crew.target_company or '미지정' }}</span>
-                            </div>
-                            
-                            <div class="small">
-                                <span class="text-muted">🛠 기술:</span>
-                                <span class="text-muted italic">
+                                    {% if user and member.crew.nickname == user.nickname %}<span class="ms-1 small opacity-50" style="font-size: 0.7rem;">(나)</span>{% endif %}
+                                </td>
+                                <td class="keywords">
                                     {% if member.crew.interest_keywords %}
-                                        {{ member.crew.interest_keywords }}
+                                        {% set kw_list = member.crew.interest_keywords.split(',') %}
+                                        {% for i in range(0, kw_list|length, 2) %}
+                                            {{ kw_list[i].strip() }}{% if i+1 < kw_list|length %}, {{ kw_list[i+1].strip() }}{% endif %}<br>
+                                        {% endfor %}
                                     {% else %}
-                                        미지정
+                                        범용
                                     {% endif %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <span class="company-tag" style="font-size: 0.6rem; padding: 2px 6px;">{{ member.crew.target_company or '미지정' }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="col-12 text-center py-5">
-        <div class="bg-white p-5 rounded-4 shadow-sm">
-            <i class="bi bi-clock-history text-muted fs-1 mb-3 d-block"></i>
-            <h4 class="fw-bold">매칭 준비 중입니다</h4>
-            <p class="text-muted">관리자가 그룹 매칭을 진행할 때까지 잠시만 기다려주세요.</p>
+    <div class="col-12 text-center">
+        <div class="dashboard-card py-5">
+            <h3 style="font-size: 1rem; color: var(--text-muted);">현재 분석 중인 데이터가 없습니다.</h3>
+            <p class="small opacity-50" style="font-size: 0.8rem;">관리자가 매칭을 실행할 때까지 대기해 주세요.</p>
         </div>
     </div>
     {% endfor %}
 </div>
 
 <style>
-    .bg-mint {
-        background-color: #10B981;
+    .active-connection {
+        border-color: var(--accent-text) !important;
+        box-shadow: 0 0 30px rgba(157, 124, 255, 0.1);
     }
-    .ring-primary {
-        outline: 2px solid var(--primary-color);
-        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.1), 0 4px 6px -2px rgba(37, 99, 235, 0.05);
+    .text-highlight {
+        color: var(--accent-text);
+    }
+    .crew-table td {
+        border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+        padding: 14px 0 !important;
+    }
+    .crew-table td.keywords {
+        padding-left: 20px !important;
+        font-size: 0.75rem !important;
+        line-height: 1.6;
+    }
+    .crew-table tr:last-child td {
+        border-bottom: none !important;
     }
 </style>
 {% endblock %}
