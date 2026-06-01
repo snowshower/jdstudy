@@ -9,11 +9,12 @@ class Crew(Base):
     id = Column(Integer, primary_key=True, index=True)
     nickname = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    desired_job = Column(String, nullable=False)  # Backend/Frontend/Other
-    target_company = Column(String)
-    interest_keywords = Column(String)  # Comma separated
+    desired_job = Column(String, nullable=False)
+    
+    # Comma-separated strings for simplified storage
+    companies = Column(String)  # e.g., "네이버, 카카오"
+    tech_stacks = Column(String) # e.g., "Java, Spring Boot"
 
-    # Relationship to GroupMember
     group_member_info = relationship("GroupMember", back_populates="crew", uselist=False)
 
 class StudyGroup(Base):
@@ -21,8 +22,8 @@ class StudyGroup(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    common_companies = Column(String)  # Top shared companies
-    common_keywords = Column(String)   # Top shared keywords
+    common_companies = Column(String)
+    common_keywords = Column(String)
 
     members = relationship("GroupMember", back_populates="group")
 
@@ -43,7 +44,7 @@ class InsightPost(Base):
     title = Column(String, nullable=False)
     link = Column(String, nullable=False)
     content = Column(String)
-    tag = Column(String)  # [채용공고], [기술블로그], [기타]
+    tag = Column(String)
     author_nickname = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

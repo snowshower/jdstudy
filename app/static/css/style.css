@@ -211,12 +211,14 @@ table.crew-table tr:hover td {
     outline: none;
     font-size: 14px;
     font-family: "JetBrains Mono", monospace;
-    transition: border-color 0.2s ease;
+    transition: all 0.2s ease;
+    border-radius: 0px !important;
 }
 
 .metallic-input:focus {
     border-color: var(--accent-text);
     background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 10px rgba(157, 124, 255, 0.2);
 }
 
 .metallic-label {
@@ -227,6 +229,49 @@ table.crew-table tr:hover td {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 8px;
+}
+
+/* 컴포넌트 패널: 글래스모피즘 껍데기 */
+.form-group-panel {
+    background: rgba(22, 24, 30, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 24px;
+    border-radius: 0px !important; /* 완전 직각 */
+    margin-bottom: 24px;
+}
+
+.form-label {
+    display: block;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.category-title {
+    color: #9d7cff; /* 쨍한 연보라 테크 컬러 */
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    margin: 16px 0 8px 0;
+}
+
+/* 직접 입력창 테두리 각진 스타일 */
+.custom-input-wrapper input[type="text"] {
+    width: 100%;
+    background: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    padding: 12px;
+    border-radius: 0px !important;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s ease;
+}
+
+.custom-input-wrapper input[type="text"]:focus {
+    border-color: #794bfa;
+    outline: none;
 }
 
 /* Navbar */
@@ -274,4 +319,94 @@ footer {
     border-top: var(--border-subtle);
     color: var(--text-muted);
     font-size: 12px;
+}
+
+/* =========================================================================
+   NEW VANILLA CSS CHECKBOX GRID SYSTEM (Requested by user)
+   ========================================================================= */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.custom-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e2e4e9;
+    cursor: pointer;
+}
+
+.custom-checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #794bfa; /* 쨍한 보라색 네온 포인트 */
+}
+
+/* =========================================================================
+   FORCE OVERRIDE: VANILLA NEW CHECKBOX GRID SYSTEM (Bootstrap Blocker)
+   ========================================================================= */
+.checkbox-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 14px !important;
+    margin-top: 10px !important;
+}
+
+@media (max-width: 768px) {
+    .checkbox-grid {
+        grid-template-columns: repeat(2, 1fr) !important; /* 모바일 대응 */
+    }
+}
+
+.custom-checkbox-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    color: #e2e4e9 !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    padding: 4px 0 !important;
+    user-select: none !important;
+}
+
+.custom-checkbox-label:hover span {
+    color: #ffffff !important;
+}
+
+/* 부트스트랩 기본 동그라미 스타일 완전히 무력화 및 애플 메탈 사각형 커스텀 */
+.custom-checkbox-label input[type="checkbox"] {
+    all: unset !important; /* 기본 스타일 100% 초기화 */
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 18px !important;
+    height: 18px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background-color: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 0px !important; /* 각진 미니멀 메탈 스타일 유지 */
+    cursor: pointer !important;
+    position: relative !important;
+    display: inline-block !important;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+
+/* 체크 시 네온 보라 발광 광원 효과 강제 활성화 */
+.custom-checkbox-label input[type="checkbox"]:checked {
+    background: #794bfa !important;
+    border-color: #9d7cff !important;
+    box-shadow: 0 0 10px rgba(121, 75, 250, 0.6) !important;
+}
+
+/* 체크 마크 구현 */
+.custom-checkbox-label input[type="checkbox"]:checked::after {
+    content: '✓' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    color: #ffffff !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
 }

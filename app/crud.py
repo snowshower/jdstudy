@@ -11,8 +11,8 @@ def create_crew(db: Session, crew: schemas.CrewCreate):
         nickname=crew.nickname,
         hashed_password=hashed_password,
         desired_job=crew.desired_job,
-        target_company=crew.target_company,
-        interest_keywords=crew.interest_keywords
+        companies=", ".join(crew.companies) if crew.companies else None,
+        tech_stacks=", ".join(crew.tech_stacks) if crew.tech_stacks else None
     )
     db.add(db_crew)
     db.commit()
@@ -25,97 +25,41 @@ def get_crews(db: Session):
 def get_study_groups(db: Session):
     return db.query(models.StudyGroup).all()
 
-def normalize_company(name: str) -> str:
-    """[1. 문자열 정제 최우선 실행 및 마스터 사전 적용]"""
-    if not name:
-        return "기타"
-    
-    # 최우선 1순위: 공백 날리고 소문자 변환
-    clean_target = name.replace(" ", "").lower()
-    
-    COMPANY_MAP = {
-        # 🟢 네이버 계열
-        "네이버": "네이버", "naver": "네이버", 
-        "네이버웹툰": "네이버", "네이버파이낸셜": "네이버", "네이버클라우드": "네이버", "스노우": "네이버",
-        
-        # 🌌 라인 계열
-        "라인": "라인", "line": "라인", 
-        "라인플러스": "라인", "라인비즈플러스": "라인", "라인스튜디오": "라인", "라인넥스트": "라인",
-        
-        # 🟡 카카오 일반 계열 (금융 제외)
-        "카카오": "카카오", "kakao": "카카오", 
-        "카카오모빌리티": "카카오", "카카오엔터테인먼트": "카카오", "카카오웹툰": "카카오", "카카오브레인": "카카오", 
-        "다음": "카카오", "daum": "카카오", "지메이커": "카카오",
-        
-        # 🟣 우아한형제들 (배달의민족) 계열
-        "배민": "우아한형제들", "우형": "우아한형제들", "배달의민족": "우아한형제들", 
-        "우아한형제들": "우아한형제들", "우아한": "우아한형제들", "b마트": "우아한형제들", "우아한청년들": "우아한형제들",
-        
-        # 🔵 토스 계열
-        "토스": "토스", "toss": "토스", 
-        "토스페이먼츠": "토스", "토스증권": "토스", "토스뱅크": "토스", "비바리퍼블리카": "토스",
-        
-        # 🟠 쿠팡 계열
-        "쿠팡": "쿠팡", "coupang": "쿠팡", "쿠팡이츠": "쿠팡", "쿠팡플레이": "쿠팡",
-        
-        # 🟤 당근 계열
-        "당근": "당근마켓", "당근마켓": "당근마켓", "daangn": "당근마켓",
-        
-        # 🔴 무신사 계열
-        "무신사": "무신사", "musinsa": "무신사", "29cm": "무신사", "솔드아웃": "무신사",
-        
-        # ⚪ 기타 주요 대형 스타트업
-        "직방": "직방", "zigbang": "직방", "호갱노노": "직방",
-        "야놀자": "야놀자", "yanolja": "야놀자", "인터파크": "야놀자", "트리플": "야놀자", "데일리호텔": "야놀자",
-        "몰로코": "몰로코", "moloco": "몰로코",
-        "두나무": "두나무", "dunamu": "두나무", "업비트": "두나무", "upbit": "두나무",
-        "센드버드": "센드버드", "sendbird": "센드버드",
-        "오늘의집": "오늘의집", "버킷플레이스": "오늘의집", "컬리": "컬리", "마켓컬리": "컬리",
-        "쏘카": "쏘카", "socar": "쏘카", "크림": "크림", "kream": "크림",
-        "리디": "리디", "리디북스": "리디", "왓챠": "왓챠", "watcha": "왓챠", "데브시스터즈": "데브시스터즈",
-        
-        # 🏦 전통 금융권 및 테크핀 연합
-        "신한은행": "금융권", "국민은행": "금융권", "kb국민은행": "금융권", "우리은행": "금융권", "하나은행": "금융권",
-        "nh농협은행": "금융권", "농협은행": "금융권", "기업은행": "금융권", "ibk기업은행": "금융권", "케이뱅크": "금융권",
-        "카카오뱅크": "금융권", "카카오페이": "금융권", "네이버페이": "금융권", 
-        "페이코": "금융권", "payco": "금융권", "핀다": "금융권", "뱅크샐러드": "금융권",
-        "미래에셋증권": "금융권", "삼성증권": "금융권", "신한카드": "금융권", "현대카드": "금융권"
-    }
-
-    # 1. 사전에서 완전 일치 확인
-    if clean_target in COMPANY_MAP:
-        return COMPANY_MAP[clean_target]
-    
-    # 2. 부분 일치 후순위 확인
-    for key, val in COMPANY_MAP.items():
-        if key in clean_target or clean_target in key:
-            return val
-            
-    # 3. 사전에 없으면 원본 반환 (후에 기타 처리됨)
-    return name
-
 def calculate_match_score(crew1: models.Crew, crew2: models.Crew):
+    """
+    Simplified Scoring system: Intersection count for Companies and Tech Stacks.
+    """
     score = 0
-    common_data = {"companies": [], "keywords": []}
+    common_data = {"companies": [], "techs": []}
     
-    comp1 = normalize_company(crew1.target_company)
-    comp2 = normalize_company(crew2.target_company)
+    # Parse stored strings
+    c1_list = [c.strip() for c in crew1.companies.split(',')] if crew1.companies else []
+    c2_list = [c.strip() for c in crew2.companies.split(',')] if crew2.companies else []
+    t1_list = [t.strip() for t in crew1.tech_stacks.split(',')] if crew1.tech_stacks else []
+    t2_list = [t.strip() for t in crew2.tech_stacks.split(',')] if crew2.tech_stacks else []
     
-    if comp1 != "기타" and comp1 == comp2:
-        score += 100
-        common_data["companies"].append(crew1.target_company)
-
-    kw1 = set(k.strip().lower() for k in (crew1.interest_keywords or "").split(",") if k.strip())
-    kw2 = set(k.strip().lower() for k in (crew2.interest_keywords or "").split(",") if k.strip())
-    common_kw = kw1 & kw2
-    if common_kw:
-        score += len(common_kw) * 20
-        common_data["keywords"].extend(list(common_kw))
+    # 1. Company Overlap (Intersection)
+    comps1 = set(c1_list)
+    comps2 = set(c2_list)
+    common_comp = comps1 & comps2
+    if common_comp:
+        score += len(common_comp) * 15  # Weighted high
+        common_data["companies"].extend(list(common_comp))
+                
+    # 2. Tech Stack Overlap (Jaccard Similarity for fine-tuning)
+    techs1 = set(t1_list)
+    techs2 = set(t2_list)
+    if techs1 or techs2:
+        intersection = techs1 & techs2
+        union = techs1 | techs2
+        jaccard = len(intersection) / len(union) if union else 0
+        score += jaccard * 10
+        common_data["techs"].extend(list(intersection))
         
     return score, common_data
 
 def perform_matching(db: Session):
-    # 0. 초기화
+    # 0. Initialize
     db.query(models.GroupMember).delete()
     db.query(models.StudyGroup).delete()
     db.commit()
@@ -124,86 +68,48 @@ def perform_matching(db: Session):
     if not all_crews:
         return []
 
-    # [1단계: 무조건 5개의 빈 조(Group Object) 공간 먼저 확보하기]
-    # 기업 정규화 및 인원수 카운팅
-    normalized_names = [normalize_company(c.target_company) for c in all_crews]
-    domain_counts = Counter([n for n in normalized_names if n != "기타"])
+    # Target: groups of exactly 4.
+    total_groups = len(all_crews) // 4
+    if total_groups == 0: total_groups = 1
     
-    # 상위 도메인 슬롯 추출 (6명 이상인 경우 2개 슬롯으로 분할)
-    slot_candidates = []
-    for domain, count in sorted(domain_counts.items(), key=lambda x: x[1], reverse=True):
-        if count >= 6:
-            slot_candidates.append({"domain": domain, "suffix": "A", "count": 4})
-            slot_candidates.append({"domain": domain, "suffix": "B", "count": count - 4})
-        else:
-            slot_candidates.append({"domain": domain, "suffix": "", "count": count})
+    unassigned = list(all_crews)
+    groups_members = [[] for _ in range(total_groups)]
     
-    # 인원수 많은 순으로 상위 5개 슬롯 확정
-    slot_candidates.sort(key=lambda x: x["count"], reverse=True)
-    top_5_slots = slot_candidates[:5]
-    
-    # 5개가 부족하면 generic 슬롯으로 채움
-    while len(top_5_slots) < 5:
-        top_5_slots.append({"domain": "기타", "suffix": str(len(top_5_slots)+1), "count": 0})
-
-    # 5개의 조 메모리 공간 생성: [멤버리스트, 매칭용도메인, 표시접미사]
-    groups_data = []
-    for slot in top_5_slots:
-        groups_data.append([[], slot["domain"], slot["suffix"]])
-
-    # [2단계: 1차 기업 매칭 시 '최대 4명' 컷 오프 강제 채우기]
-    unassigned_pool = []
-    for crew in all_crews:
-        norm = normalize_company(crew.target_company)
-        placed = False
-        # 확보된 5개 조 중 도메인이 일치하고 인원이 4명 미만인 곳 탐색
-        for g in groups_data:
-            if g[1] == norm and len(g[0]) < 4:
-                g[0].append(crew)
-                placed = True
-                break
-        if not placed:
-            unassigned_pool.append(crew)
-
-    # [3단계: 4명 하드 캡 기준 잔여 기술 매칭]
-    # 낙오자 풀에 있는 크루들을 인원이 4명 미만인 조에 기술 점수 기반으로 배정
-    while unassigned_pool:
-        outlier = unassigned_pool.pop(0)
-        # 이미 4명인 조는 후보군에서 원천 배제 (Hard Cap)
-        available_indices = [idx for idx, g in enumerate(groups_data) if len(g[0]) < 4]
+    if unassigned:
+        groups_members[0].append(unassigned.pop(0))
+        
+    while unassigned:
+        crew = unassigned.pop(0)
+        best_group_idx = -1
+        max_avg_score = -1
+        
+        available_indices = [i for i, g in enumerate(groups_members) if len(g) < 4]
         
         if not available_indices:
-            # 모든 조가 4명이 찼을 때 (20명 초과 데이터 등) - 인원 적은 조부터 5명까지 허용
-            groups_data.sort(key=lambda x: len(x[0]))
-            groups_data[0][0].append(outlier)
+            groups_members.append([crew])
             continue
-
-        best_group_idx = -1
-        max_tech_score = -1
-        kw_outlier = set(k.strip().lower() for k in (outlier.interest_keywords or "").split(",") if k.strip())
-
-        for idx in available_indices:
-            m_list = groups_data[idx][0]
-            tech_score = 0
-            for member in m_list:
-                kw_member = set(k.strip().lower() for k in (member.interest_keywords or "").split(",") if k.strip())
-                tech_score += len(kw_outlier & kw_member)
             
-            if tech_score > max_tech_score:
-                max_tech_score = tech_score
+        for idx in available_indices:
+            current_group = groups_members[idx]
+            if not current_group:
+                score = 0
+            else:
+                total_score = 0
+                for member in current_group:
+                    s, _ = calculate_match_score(crew, member)
+                    total_score += s
+                score = total_score / len(current_group)
+            
+            if score > max_avg_score:
+                max_avg_score = score
                 best_group_idx = idx
                 
-        # 매칭된 기술 핏이 있거나, 없어도 빈자리가 있는 가장 작은 조에 배정
-        if best_group_idx == -1:
-            best_group_idx = min(available_indices, key=lambda i: len(groups_data[i][0]))
-            
-        groups_data[best_group_idx][0].append(outlier)
+        groups_members[best_group_idx].append(crew)
 
-    # DB 저장 (결과는 무조건 5개 조로 고정)
     created_groups = []
-    for idx, (members, domain, suffix) in enumerate(groups_data):
+    for idx, members in enumerate(groups_members):
         if not members: continue
-        group_obj = _finalize_and_create_group(db, idx + 1, members, domain, suffix)
+        group_obj = _create_group_object(db, idx + 1, members)
         created_groups.append(group_obj)
 
     db.commit()
@@ -211,29 +117,26 @@ def perform_matching(db: Session):
         db.refresh(g)
     return created_groups
 
-def _finalize_and_create_group(db: Session, counter: int, members: list, primary_domain: str, suffix: str = ""):
+def _create_group_object(db: Session, counter: int, members: list):
     all_comps = []
-    all_kws = []
+    all_techs = []
     for i in range(len(members)):
         for j in range(i + 1, len(members)):
             _, common = calculate_match_score(members[i], members[j])
             all_comps.extend(common["companies"])
-            all_kws.extend(common["keywords"])
+            all_techs.extend(common["techs"])
     
     top_comps = [item[0] for item in Counter(all_comps).most_common(2)]
-    filtered_kws = [kw for kw in all_kws if kw.lower() not in ["java", "spring", "spring boot"]]
-    top_kws = [item[0] for item in Counter(filtered_kws).most_common(2)]
+    top_techs = [item[0] for item in Counter(all_techs).most_common(2)]
     
-    # 조 이름 결정
-    if primary_domain and primary_domain != "기타":
-        group_name = f"{primary_domain} {suffix}".strip() + f" Group ({counter}조)"
-    else:
-        group_name = f"Backend Group {counter}조"
+    group_name = f"Matching Group {counter}"
+    if top_comps:
+        group_name = f"{top_comps[0]} Focused Group ({counter})"
     
     db_group = models.StudyGroup(
         name=group_name,
         common_companies=", ".join(top_comps) if top_comps else "다양한 기업",
-        common_keywords=", ".join(top_kws) if top_kws else "다양한 기술"
+        common_keywords=", ".join(top_techs) if top_techs else "다양한 기술"
     )
     db.add(db_group)
     db.flush()
@@ -246,11 +149,23 @@ def _finalize_and_create_group(db: Session, counter: int, members: list, primary
 def get_crew(db: Session, crew_id: int):
     return db.query(models.Crew).filter(models.Crew.id == crew_id).first()
 
+def delete_crew(db: Session, crew_id: int):
+    db_crew = get_crew(db, crew_id)
+    if db_crew:
+        db.delete(db_crew)
+        db.commit()
+    return db_crew
+
 def update_crew_admin(db: Session, crew_id: int, update_data: schemas.CrewUpdateAdmin):
     db_crew = get_crew(db, crew_id)
     if not db_crew: return None
-    if update_data.target_company is not None: db_crew.target_company = update_data.target_company
-    if update_data.interest_keywords is not None: db_crew.interest_keywords = update_data.interest_keywords
+    
+    if update_data.companies is not None:
+        db_crew.companies = ", ".join(update_data.companies) if update_data.companies else None
+            
+    if update_data.tech_stacks is not None:
+        db_crew.tech_stacks = ", ".join(update_data.tech_stacks) if update_data.tech_stacks else None
+            
     db.commit()
     db.refresh(db_crew)
     return db_crew

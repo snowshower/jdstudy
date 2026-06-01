@@ -13,7 +13,7 @@
     {% for group in groups %}
     {% set is_my_group = false %}
     {% for member in group.members %}
-        {% if user and member.crew.nickname == user.nickname %}
+        {% if user and member.nickname == user.nickname %}
             {% set is_my_group = true %}
         {% endif %}
     {% endfor %}
@@ -28,7 +28,7 @@
             </div>
 
             <div class="mb-4">
-                <span class="label d-block mb-2">주요 키워드</span>
+                <span class="label d-block mb-2">공통 키워드 (주요 관심사)</span>
                 <div class="d-flex flex-wrap gap-2">
                     {% if group.common_companies %}
                         {% for comp in group.common_companies.split(',') %}
@@ -50,22 +50,28 @@
                         <tbody>
                             {% for member in group.members %}
                             <tr>
-                                <td class="nickname {% if user and member.crew.nickname == user.nickname %}text-highlight{% endif %}">
-                                    {{ member.crew.nickname }}
-                                    {% if user and member.crew.nickname == user.nickname %}<span class="ms-1 small opacity-50" style="font-size: 0.7rem;">(나)</span>{% endif %}
+                                <td class="nickname {% if user and member.nickname == user.nickname %}text-highlight{% endif %}">
+                                    {{ member.nickname }}
+                                    {% if user and member.nickname == user.nickname %}<span class="ms-1 small opacity-50" style="font-size: 0.7rem;">(나)</span>{% endif %}
                                 </td>
                                 <td class="keywords">
-                                    {% if member.crew.interest_keywords %}
-                                        {% set kw_list = member.crew.interest_keywords.split(',') %}
-                                        {% for i in range(0, kw_list|length, 2) %}
-                                            {{ kw_list[i].strip() }}{% if i+1 < kw_list|length %}, {{ kw_list[i+1].strip() }}{% endif %}<br>
+                                    {% if member.tech_stacks %}
+                                        {% for tech in member.tech_stacks %}
+                                            {{ tech }}{% if not loop.last %}, {% endif %}
+                                            {% if loop.index % 3 == 0 %}<br>{% endif %}
                                         {% endfor %}
                                     {% else %}
                                         범용
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <span class="company-tag" style="font-size: 0.6rem; padding: 2px 6px;">{{ member.crew.target_company or '미지정' }}</span>
+                                    {% if member.companies %}
+                                        {% for company in member.companies %}
+                                            <span class="company-tag" style="font-size: 0.6rem; padding: 2px 6px; margin-bottom: 2px; display: inline-block;">{{ company }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="company-tag" style="font-size: 0.6rem; padding: 2px 6px;">미지정</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -98,9 +104,9 @@
         padding: 14px 0 !important;
     }
     .crew-table td.keywords {
-        padding-left: 20px !important;
+        padding-left: 15px !important;
         font-size: 0.75rem !important;
-        line-height: 1.6;
+        line-height: 1.4;
     }
     .crew-table tr:last-child td {
         border-bottom: none !important;
