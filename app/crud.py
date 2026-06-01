@@ -5,48 +5,50 @@ from collections import Counter
 def get_crew_by_nickname(db: Session, nickname: str):
     return db.query(models.Crew).filter(models.Crew.nickname == nickname).first()
 
-def create_crew(db: Session, crew: schemas.CrewCreate):
-    hashed_password = auth.get_password_hash(crew.password)
-    db_crew = models.Crew(
-        nickname=crew.nickname,
-        hashed_password=hashed_password,
-        desired_job=crew.desired_job,
-        companies=", ".join(crew.companies) if crew.companies else None,
-        tech_stacks=", ".join(crew.tech_stacks) if crew.tech_stacks else None
-    )
-    db.add(db_crew)
-    db.commit()
-    db.refresh(db_crew)
-    return db_crew
-
 def get_crews(db: Session):
     return db.query(models.Crew).all()
 
 def get_study_groups(db: Session):
     return db.query(models.StudyGroup).all()
 
+def create_crew(db: Session, crew: schemas.CrewCreate):
+    hashed_password = auth.get_password_hash(crew.password)
+    
+    # 공백이나 None 방어 처리 및 쉼표 치환
+    companies_str = ", ".join([c.strip() for c in crew.companies if c.strip()]) if crew.companies else None
+    tech_stacks_str = ", ".join([t.strip() for t in crew.tech_stacks if t.strip()]) if crew.tech_stacks else None
+    
+    db_crew = models.Crew(
+        nickname=crew.nickname,
+        hashed_password=hashed_password,
+        desired_job=crew.desired_job,
+        companies=companies_str,
+        tech_stacks=tech_stacks_str
+    )
+    db.add(db_crew)
+    db.commit()
+    db.refresh(db_crew)
+    return db_crew
+
 def calculate_match_score(crew1: models.Crew, crew2: models.Crew):
-    """
-    Simplified Scoring system: Intersection count for Companies and Tech Stacks.
-    """
     score = 0
     common_data = {"companies": [], "techs": []}
     
-    # Parse stored strings
-    c1_list = [c.strip() for c in crew1.companies.split(',')] if crew1.companies else []
-    c2_list = [c.strip() for c in crew2.companies.split(',')] if crew2.companies else []
-    t1_list = [t.strip() for t in crew1.tech_stacks.split(',')] if crew1.tech_stacks else []
-    t2_list = [t.strip() for t in crew2.tech_stacks.split(',')] if crew2.tech_stacks else []
+    # split 시 빈 문자열('')이 생성되는 버그 완벽 방어
+    c1_list = [c.strip() for c in crew1.companies.split(',') if c.strip()] if crew1.companies else []
+    c2_list = [c.strip() for c in crew2.companies.split(',') if c.strip()] if crew2.companies else []
+    t1_list = [t.strip() for t in crew1.tech_stacks.split(',') if t.strip()] if crew1.tech_stacks else []
+    t2_list = [t.strip() for t in crew2.tech_stacks.split(',') if t.strip()] if crew2.tech_stacks else []
     
-    # 1. Company Overlap (Intersection)
+    # 1. 목표 기업 교집합 가중치 연산
     comps1 = set(c1_list)
     comps2 = set(c2_list)
     common_comp = comps1 & comps2
     if common_comp:
-        score += len(common_comp) * 15  # Weighted high
+        score += len(common_comp) * 15 
         common_data["companies"].extend(list(common_comp))
                 
-    # 2. Tech Stack Overlap (Jaccard Similarity for fine-tuning)
+    # 2. 기술 스택 자카드 유사도 연산
     techs1 = set(t1_list)
     techs2 = set(t2_list)
     if techs1 or techs2:
@@ -59,8 +61,8 @@ def calculate_match_score(crew1: models.Crew, crew2: models.Crew):
     return score, common_data
 
 def perform_matching(db: Session):
-    # 0. Initialize
-    db.query(models.GroupMember).delete()
+    # 기존 관계 초기화 및 그룹 리셋
+    db.query(models.Crew).update({models.Crew.group_id: None})
     db.query(models.StudyGroup).delete()
     db.commit()
 
@@ -68,7 +70,7 @@ def perform_matching(db: Session):
     if not all_crews:
         return []
 
-    # Target: groups of exactly 4.
+    # 4명씩 칼같이 쪼개기 조 편성
     total_groups = len(all_crews) // 4
     if total_groups == 0: total_groups = 1
     
@@ -140,12 +142,14 @@ def _create_group_object(db: Session, counter: int, members: list):
     )
     db.add(db_group)
     db.flush()
+    
+    # 중간 테이블 없이 크루 객체에 직접 group_id 주입
     for m in members:
-        db_member = models.GroupMember(group_id=db_group.id, crew_id=m.id)
-        db.add(db_member)
+        m.group_id = db_group.id
+        db.add(m)
     return db_group
 
-# Admin Functions
+# Admin 및 기타 서브 로직들
 def get_crew(db: Session, crew_id: int):
     return db.query(models.Crew).filter(models.Crew.id == crew_id).first()
 
@@ -161,28 +165,25 @@ def update_crew_admin(db: Session, crew_id: int, update_data: schemas.CrewUpdate
     if not db_crew: return None
     
     if update_data.companies is not None:
-        db_crew.companies = ", ".join(update_data.companies) if update_data.companies else None
+        db_crew.companies = ", ".join([c.strip() for c in update_data.companies if c.strip()]) if update_data.companies else None
             
     if update_data.tech_stacks is not None:
-        db_crew.tech_stacks = ", ".join(update_data.tech_stacks) if update_data.tech_stacks else None
+        db_crew.tech_stacks = ", ".join([t.strip() for t in update_data.tech_stacks if t.strip()]) if update_data.tech_stacks else None
             
     db.commit()
     db.refresh(db_crew)
     return db_crew
 
 def move_member(db: Session, crew_id: int, new_group_id: int):
-    db_member = db.query(models.GroupMember).filter(models.GroupMember.crew_id == crew_id).first()
-    if not db_member:
-        db_member = models.GroupMember(crew_id=crew_id, group_id=new_group_id)
-        db.add(db_member)
-    else:
-        db_member.group_id = new_group_id
-    db.commit()
-    db.refresh(db_member)
-    return db_member
+    db_crew = get_crew(db, crew_id)
+    if db_crew:
+        db_crew.group_id = new_group_id
+        db.commit()
+        db.refresh(db_crew)
+    return db_crew
 
 def clear_matching(db: Session):
-    db.query(models.GroupMember).delete()
+    db.query(models.Crew).update({models.Crew.group_id: None})
     db.query(models.StudyGroup).delete()
     db.commit()
 
