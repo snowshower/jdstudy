@@ -5,7 +5,8 @@ import pytest
 import os
 
 from app.main import app
-from app.database import Base, get_db
+from app.database import get_db
+from app import models
 
 # Use a separate test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -22,15 +23,23 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True)
+def override_db():
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    if get_db in app.dependency_overrides:
+        del app.dependency_overrides[get_db]
 
-client = TestClient(app)
+@pytest.fixture
+def client():
+    with TestClient(app) as c:
+        yield c
 
 @pytest.fixture(autouse=True)
 def setup_db():
-    Base.metadata.create_all(bind=engine)
+    models.Base.metadata.create_all(bind=engine)
     yield
-    Base.metadata.drop_all(bind=engine)
+    models.Base.metadata.drop_all(bind=engine)
     engine.dispose()
     if os.path.exists("./test.db"):
         try:
@@ -38,7 +47,7 @@ def setup_db():
         except PermissionError:
             pass
 
-def test_register_crew_success():
+def test_register_crew_success(client):
     response = client.post(
         "/register",
         json={
@@ -55,7 +64,7 @@ def test_register_crew_success():
     assert "id" in data
     assert "password" not in data  # Ensure password is not returned
 
-def test_register_crew_duplicate_nickname():
+def test_register_crew_duplicate_nickname(client):
     # Register first time
     client.post(
         "/register",

@@ -18,7 +18,7 @@ def test_admin_login_success(client):
     # Check if we can access admin dashboard
     response = client.get("/admin/dashboard")
     assert response.status_code == 200
-    assert "관리자 대시보드" in response.json()["message"]
+    assert "crews" in response.json()
 
 def test_admin_login_failure(client):
     response = client.post(

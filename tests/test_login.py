@@ -5,7 +5,8 @@ import pytest
 import os
 
 from app.main import app
-from app.database import Base, get_db
+from app.database import get_db
+from app import models
 
 # Use a separate test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_login.db"
@@ -22,7 +23,12 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True)
+def override_db():
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    if get_db in app.dependency_overrides:
+        del app.dependency_overrides[get_db]
 
 @pytest.fixture
 def client():
@@ -31,12 +37,11 @@ def client():
 
 @pytest.fixture(autouse=True)
 def setup_db():
-    Base.metadata.create_all(bind=engine)
+    models.Base.metadata.create_all(bind=engine)
     # Create a test user
     from app.auth import get_password_hash
-    from app.models import Crew
     db = TestingSessionLocal()
-    db.add(Crew(
+    db.add(models.Crew(
         nickname="login_user",
         hashed_password=get_password_hash("password123"),
         desired_job="백엔드"
@@ -46,7 +51,7 @@ def setup_db():
     
     yield
     
-    Base.metadata.drop_all(bind=engine)
+    models.Base.metadata.drop_all(bind=engine)
     engine.dispose()
     if os.path.exists("./test_login.db"):
         try:
@@ -91,9 +96,11 @@ def test_protected_route_access(client):
     )
     
     # After login
+    # 매칭 결과가 없으면 404를 반환하므로, 로그인이 성공하여 권한 체크를 통과했는지 확인
     response = client.get("/results")
-    assert response.status_code == 200
-    assert "매칭 결과 페이지" in response.json()["message"]
+    assert response.status_code in [200, 404]
+    if response.status_code == 200:
+        assert "groups" in response.json()
 
 def test_logout(client):
     # Login
@@ -102,10 +109,10 @@ def test_logout(client):
         json={"nickname": "login_user", "password": "password123"}
     )
     
-    # Logout
-    response = client.post("/logout")
-    assert response.status_code == 200
-    assert response.json()["message"] == "로그아웃 성공"
+    # Logout - 리다이렉트(303)가 발생하는지 확인
+    response = client.post("/logout", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/"
     
     # Try accessing protected route again
     response = client.get("/results", follow_redirects=False)
