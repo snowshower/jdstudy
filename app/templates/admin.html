@@ -6,7 +6,7 @@
 <div class="dashboard-card mb-5">
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <h1 class="fw-bold m-0" style="font-size: 1.5rem; letter-spacing: -1px;">시스템 관리 콘솔</h1>
+            <h1 class="fw-bold m-0" style="font-size: 1.5rem; letter-spacing: -1px; color: #ffffff;">시스템 관리 콘솔</h1>
             <p class="small mb-0 mt-1" style="color: var(--text-muted);">상태: 운영 중 // 데이터 노드: {{ crews|length }}</p>
         </div>
         <div class="d-flex gap-2">
@@ -40,9 +40,9 @@
                 <option value="">전체 기업</option>
                 {% set all_unique_companies = [] %}
                 {% for crew in crews %}
-                    {% for tc in crew.target_companies %}
-                        {% if tc.company not in all_unique_companies %}
-                            {% set _ = all_unique_companies.append(tc.company) %}
+                    {% for comp in crew.company_list %}
+                        {% if comp not in all_unique_companies and comp.strip() %}
+                            {% set _ = all_unique_companies.append(comp.strip()) %}
                         {% endif %}
                     {% endfor %}
                 {% endfor %}
@@ -78,33 +78,27 @@
         </thead>
         <tbody>
             {% for crew in crews %}
-            {% set assigned_group = crew.group_member_info.group.name if crew.group_member_info else 'waiting' %}
+            {% set assigned_group = crew.study_group.name if crew.study_group else 'waiting' %}
             
-            {# Compute data-companies for filtering #}
-            {% set company_list = [] %}
-            {% for tc in crew.target_companies %}
-                {% set _ = company_list.append(tc.company) %}
-            {% endfor %}
-
-            <tr class="crew-row" data-companies="{{ company_list|join(',') }}" data-group="{{ assigned_group }}">
+            <tr class="crew-row" data-companies="{{ crew.company_list|join(',') }}" data-group="{{ assigned_group }}">
                 <td class="nickname">{{ crew.nickname }}</td>
                 <td>
                     <div class="d-flex flex-wrap gap-1">
-                        {% for tc in crew.target_companies %}
-                            <span class="company-tag" style="font-size: 10px; padding: 2px 6px;">{{ tc.company }}</span>
+                        {% for comp in crew.company_list %}
+                            <span class="company-tag" style="font-size: 10px; padding: 2px 6px;">{{ comp }}</span>
                         {% endfor %}
-                        {% if not crew.target_companies %}-{% endif %}
+                        {% if not crew.company_list %}-{% endif %}
                     </div>
                 </td>
                 <td class="keywords">
-                    {% for ts in crew.tech_stacks %}
-                        {{ ts.tech_name }}{% if not loop.last %}, {% endif %}
+                    {% for ts in crew.tech_list %}
+                        {{ ts }}{% if not loop.last %}, {% endif %}
                     {% endfor %}
-                    {% if not crew.tech_stacks %}-{% endif %}
+                    {% if not crew.tech_list %}-{% endif %}
                 </td>
                 <td>
-                    {% if crew.group_member_info %}
-                        <span class="group-assigned">{{ crew.group_member_info.group.name }}</span>
+                    {% if crew.study_group %}
+                        <span class="group-assigned">{{ crew.study_group.name }}</span>
                     {% else %}
                         <span style="color: var(--text-muted); font-size: 0.75rem;">대기 중</span>
                     {% endif %}
@@ -127,7 +121,6 @@
     </table>
 </div>
 
-<!-- Edit Modal -->
 <div class="modal fade" id="editCrewModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content dashboard-card p-0 shadow-lg" style="border-radius: 0px !important;">
@@ -139,7 +132,6 @@
                 <form id="editCrewForm">
                     <input type="hidden" id="editCrewId">
                     
-                    <!-- Companies Grid -->
                     <div class="mb-4">
                         <label class="metallic-label">목표 기업 수정</label>
                         <div class="checkbox-grid">
@@ -156,7 +148,6 @@
                         </div>
                     </div>
 
-                    <!-- Tech Grid -->
                     <div class="mb-4">
                         <label class="metallic-label">기술 스택 수정</label>
                         <div class="checkbox-grid">

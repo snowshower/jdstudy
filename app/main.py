@@ -169,13 +169,33 @@ def admin_page(request: Request, db: Session = Depends(database.get_db), admin =
     user = get_current_user(request)
     crews = crud.get_crews(db)
     groups = crud.get_study_groups(db)
-    return templates.TemplateResponse(request=request, name="admin.html", context={"user": user, "crews": crews, "groups": groups, "active_page": "admin"})
+    
+    for crew in crews:
+        crew.company_list = [c.strip() for c in crew.companies.split(',')] if crew.companies else []
+        crew.tech_list = [t.strip() for t in crew.tech_stacks.split(',')] if crew.tech_stacks else []
+        
+    return templates.TemplateResponse(
+        request=request, 
+        name="admin.html", 
+        context={"user": user, "crews": crews, "groups": groups, "active_page": "admin"}
+    )
 
 @app.get("/results-page", response_class=HTMLResponse)
 def results_page(request: Request, db: Session = Depends(database.get_db), user_session = Depends(login_required)):
     user = get_current_user(request)
     groups = crud.get_study_groups(db)
-    return templates.TemplateResponse(request=request, name="results.html", context={"user": user, "groups": groups, "active_page": "results"})
+    
+    for group in groups:
+        for member in group.members:
+            crew_obj = member.crew if hasattr(member, 'crew') else member
+            crew_obj.company_list = [c.strip() for c in crew_obj.companies.split(',')] if crew_obj.companies else []
+            crew_obj.tech_list = [t.strip() for t in crew_obj.tech_stacks.split(',')] if crew_obj.tech_stacks else []
+            
+    return templates.TemplateResponse(
+        request=request, 
+        name="results.html", 
+        context={"user": user, "groups": groups, "active_page": "results"}
+    )
 
 @app.get("/board-page", response_class=HTMLResponse)
 def board_page(request: Request, db: Session = Depends(database.get_db), user_session = Depends(login_required)):
