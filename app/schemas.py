@@ -4,31 +4,39 @@ from datetime import datetime
 
 class CrewBase(BaseModel):
     nickname: str
-    desired_job: str
-    companies: list[str] = []
-    tech_stacks: list[str] = []
+    group_name: str
+    survey_domains: Optional[str] = None
+    survey_companies: Optional[str] = None
 
 class CrewCreate(CrewBase):
-    password: str
+    password: str = "1234"
 
 class CrewResponse(BaseModel):
     id: int
     nickname: str
-    desired_job: str
-    companies: list[str]
-    tech_stacks: list[str]
+    group_name: str
+    survey_domains: Optional[str]
+    survey_companies: Optional[str]
     
+    # helper for template rendering
+    domain_list: list[str] = []
+    company_list: list[str] = []
+
     @model_validator(mode='before')
     @classmethod
-    def validate_from_string(cls, data: Any) -> Any:
+    def validate_from_model(cls, data: Any) -> Any:
         if not isinstance(data, dict):
-            # Convert comma-separated strings from DB back to lists for API
+            # Convert comma-separated strings from DB back to lists for convenience
+            domains = [d.strip() for d in data.survey_domains.split(",")] if data.survey_domains else []
+            companies = [c.strip() for c in data.survey_companies.split(",")] if data.survey_companies else []
             return {
                 "id": data.id,
                 "nickname": data.nickname,
-                "desired_job": data.desired_job,
-                "companies": data.companies.split(", ") if data.companies else [],
-                "tech_stacks": data.tech_stacks.split(", ") if data.tech_stacks else []
+                "group_name": data.group_name,
+                "survey_domains": data.survey_domains,
+                "survey_companies": data.survey_companies,
+                "domain_list": domains,
+                "company_list": companies
             }
         return data
 
@@ -38,36 +46,9 @@ class LoginRequest(BaseModel):
     nickname: str
     password: str
 
-class GroupMemberResponse(BaseModel):
-    nickname: str
-    desired_job: str
-    companies: list[str]
-    tech_stacks: list[str]
-    
-    @model_validator(mode='before')
-    @classmethod
-    def validate_from_model(cls, data: Any) -> Any:
-        if hasattr(data, "crew"):
-            crew = data.crew
-            return {
-                "nickname": crew.nickname,
-                "desired_job": crew.desired_job,
-                "companies": crew.companies.split(", ") if crew.companies else [],
-                "tech_stacks": crew.tech_stacks.split(", ") if crew.tech_stacks else []
-            }
-        return data
-    model_config = ConfigDict(from_attributes=True)
-
-class GroupResponse(BaseModel):
-    id: int
-    name: str
-    common_companies: Optional[str] = None
-    common_keywords: Optional[str] = None
-    members: list[GroupMemberResponse]
-    model_config = ConfigDict(from_attributes=True)
-
-class MatchingResultResponse(BaseModel):
-    groups: list[GroupResponse]
+class PasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str
 
 # Insight Board Schemas
 class InsightPostBase(BaseModel):
@@ -92,9 +73,6 @@ class InsightPostResponse(InsightPostBase):
 
 # Admin Features Schemas
 class CrewUpdateAdmin(BaseModel):
-    companies: Optional[list[str]] = None
-    tech_stacks: Optional[list[str]] = None
-
-class MoveMemberRequest(BaseModel):
-    crew_id: int
-    new_group_id: int
+    group_name: Optional[str] = None
+    survey_domains: Optional[str] = None
+    survey_companies: Optional[str] = None

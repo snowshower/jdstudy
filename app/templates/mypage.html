@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}마이페이지 - JD-MATCH{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-6 col-lg-5">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold text-gradient mb-2" style="font-size: 2.5rem; letter-spacing: -1.5px;">마이페이지</h1>
+            <p class="small" style="color: var(--text-muted);">계정 보안을 위해 비밀번호를 관리하세요.</p>
+        </div>
+
+        <div class="dashboard-card" style="padding: 2.5rem !important;">
+            <div class="mb-4">
+                <span class="label d-block mb-1">접속 계정</span>
+                <div class="value" style="font-size: 1.2rem; color: #ffffff;">{{ user.nickname }}</div>
+            </div>
+
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 2rem 0;">
+
+            <h5 class="fw-bold mb-4" style="font-size: 1rem; color: var(--accent-text);">비밀번호 변경</h5>
+            
+            <form id="passwordUpdateForm">
+                <div class="mb-3">
+                    <label class="metallic-label">현재 비밀번호</label>
+                    <input type="password" class="metallic-input" name="current_password" placeholder="현재 비밀번호 입력" required>
+                </div>
+                <div class="mb-3">
+                    <label class="metallic-label">새 비밀번호</label>
+                    <input type="password" class="metallic-input" id="new_password" name="new_password" placeholder="새 비밀번호 입력" required>
+                </div>
+                <div class="mb-4">
+                    <label class="metallic-label">새 비밀번호 확인</label>
+                    <input type="password" class="metallic-input" id="confirm_password" placeholder="새 비밀번호 다시 입력" required>
+                    <div id="passwordError" class="small mt-2" style="color: #ff6b6b; display: none;">비밀번호가 일치하지 않습니다.</div>
+                </div>
+                <button type="submit" class="btn-primary-neon w-100 py-3" style="font-size: 0.9rem;">비밀번호 업데이트</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const form = document.getElementById('passwordUpdateForm');
+    const newPw = document.getElementById('new_password');
+    const confirmPw = document.getElementById('confirm_password');
+    const errorMsg = document.getElementById('passwordError');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (newPw.value !== confirmPw.value) {
+            errorMsg.style.display = 'block';
+            return;
+        }
+        errorMsg.style.display = 'none';
+
+        const formData = new FormData(e.target);
+        const jsonData = {};
+        formData.forEach((value, key) => { jsonData[key] = value; });
+
+        const response = await fetch('/api/update-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(jsonData),
+        });
+
+        if (response.ok) {
+            alert('비밀번호가 성공적으로 변경되었습니다. 다시 로그인해 주세요.');
+            // Logout and redirect to login
+            const logoutResp = await fetch('/logout', { method: 'POST' });
+            window.location.href = '/login-page';
+        } else {
+            const errorData = await response.json();
+            alert('오류: ' + (errorData.detail || '비밀번호 변경에 실패했습니다.'));
+        }
+    });
+
+    confirmPw.addEventListener('input', () => {
+        if (newPw.value === confirmPw.value) {
+            errorMsg.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

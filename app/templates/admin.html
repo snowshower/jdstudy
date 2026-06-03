@@ -10,57 +10,46 @@
             <p class="small mb-0 mt-1" style="color: var(--text-muted);">상태: 운영 중 // 데이터 노드: {{ crews|length }}</p>
         </div>
         <div class="d-flex gap-2">
-            <button id="resetMatchBtn" class="btn-secondary-metallic" style="padding: 8px 20px; font-size: 0.8rem;">매칭 초기화</button>
-            <button id="startMatchBtn" class="btn-primary-neon" style="padding: 8px 24px; font-size: 0.8rem;">매칭 시작</button>
+            <!-- 기존 매칭 시작/초기화 버튼 삭제 -->
         </div>
     </div>
 </div>
 
 <div class="row g-4 mb-5">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="dashboard-card text-center">
-            <span class="label d-block mb-2">전체 신청 인원</span>
+            <span class="label d-block mb-2">전체 관리 인원</span>
             <div class="value">{{ crews|length }}</div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="dashboard-card text-center">
-            <span class="label d-block mb-2">편성된 그룹 수</span>
-            <div class="value" style="color: var(--accent-text);">{{ groups|length }}</div>
+            <span class="label d-block mb-2">운영 중인 그룹 수</span>
+            {% set group_count = [] %}
+            {% for crew in crews %}
+                {% if crew.group_name not in group_count %}
+                    {% set _ = group_count.append(crew.group_name) %}
+                {% endif %}
+            {% endfor %}
+            <div class="value" style="color: var(--accent-text);">{{ group_count|length }}</div>
         </div>
     </div>
 </div>
 
 <div class="table-container">
     <div class="p-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-3" style="border-color: rgba(255,255,255,0.1) !important;">
-        <h5 class="fw-bold m-0" style="font-size: 1rem;">신청 크루 데이터베이스</h5>
+        <h5 class="fw-bold m-0" style="font-size: 1rem;">크루 데이터베이스 (수동 매칭 관리)</h5>
         
         <div class="d-flex gap-3">
-            <select id="filterCompany" class="metallic-input" style="width: 160px; padding: 8px 12px; font-size: 0.75rem; font-weight: 300; font-family: 'Inter', sans-serif;">
-                <option value="">전체 기업</option>
-                {% set all_unique_companies = [] %}
-                {% for crew in crews %}
-                    {% for comp in crew.company_list %}
-                        {% if comp not in all_unique_companies and comp.strip() %}
-                            {% set _ = all_unique_companies.append(comp.strip()) %}
-                        {% endif %}
-                    {% endfor %}
-                {% endfor %}
-                {% for company in all_unique_companies|sort %}
-                    <option value="{{ company }}">{{ company }}</option>
-                {% endfor %}
-            </select>
-
-            <select id="filterGroup" class="metallic-input" style="width: 160px; padding: 8px 12px; font-size: 0.75rem; font-weight: 300; font-family: 'Inter', sans-serif;">
+            <select id="filterGroup" class="metallic-input" style="width: 220px; padding: 8px 12px; font-size: 0.75rem; font-weight: 300; font-family: 'Inter', sans-serif;">
                 <option value="">전체 그룹</option>
-                <option value="waiting">대기 중</option>
-                {% set group_names = [] %}
-                {% for group in groups %}
-                    {% if group.name not in group_names %}
-                        {% set _ = group_names.append(group.name) %}
+                {% set g_names = [] %}
+                {% for crew in crews %}
+                    {% if crew.group_name not in g_names %}
+                        {% set _ = g_names.append(crew.group_name) %}
                     {% endif %}
                 {% endfor %}
-                {% for name in group_names|sort %}
+                {% for name in g_names|sort %}
                     <option value="{{ name }}">{{ name }}</option>
                 {% endfor %}
             </select>
@@ -70,43 +59,37 @@
         <thead>
             <tr>
                 <th>닉네임</th>
-                <th>목표 기업</th>
-                <th>기술 스택</th>
-                <th>그룹 배정</th>
+                <th>배정 그룹</th>
+                <th>관심 분야</th>
+                <th>관심 기업</th>
                 <th class="text-center">관리</th>
             </tr>
         </thead>
         <tbody>
             {% for crew in crews %}
-            {% set assigned_group = crew.study_group.name if crew.study_group else 'waiting' %}
-            
-            <tr class="crew-row" data-companies="{{ crew.company_list|join(',') }}" data-group="{{ assigned_group }}">
+            <tr class="crew-row" data-group="{{ crew.group_name }}">
                 <td class="nickname">{{ crew.nickname }}</td>
+                <td>
+                    <span class="group-assigned">{{ crew.group_name }}</span>
+                </td>
+                <td>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for domain in crew.domain_list %}
+                            <span class="neon-badge" style="font-size: 10px; padding: 2px 6px;">{{ domain }}</span>
+                        {% endfor %}
+                    </div>
+                </td>
                 <td>
                     <div class="d-flex flex-wrap gap-1">
                         {% for comp in crew.company_list %}
                             <span class="company-tag" style="font-size: 10px; padding: 2px 6px;">{{ comp }}</span>
                         {% endfor %}
-                        {% if not crew.company_list %}-{% endif %}
                     </div>
-                </td>
-                <td class="keywords">
-                    {% for ts in crew.tech_list %}
-                        {{ ts }}{% if not loop.last %}, {% endif %}
-                    {% endfor %}
-                    {% if not crew.tech_list %}-{% endif %}
-                </td>
-                <td>
-                    {% if crew.study_group %}
-                        <span class="group-assigned">{{ crew.study_group.name }}</span>
-                    {% else %}
-                        <span style="color: var(--text-muted); font-size: 0.75rem;">대기 중</span>
-                    {% endif %}
                 </td>
                 <td class="text-center">
                     <div class="d-flex gap-1 justify-content-center">
                         <button class="btn-secondary-metallic" style="padding: 5px 10px; font-size: 0.65rem;"
-                                onclick="openEditModal({{ crew.id }}, '{{ crew.nickname }}')">
+                                onclick='openEditModal({{ crew.id }}, "{{ crew.nickname }}", "{{ crew.group_name }}", "{{ crew.survey_domains }}", "{{ crew.survey_companies }}")'>
                             수정
                         </button>
                         <button class="btn-secondary-metallic" style="padding: 5px 10px; font-size: 0.65rem; border-color: rgba(255, 100, 100, 0.3);"
@@ -125,43 +108,26 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content dashboard-card p-0 shadow-lg" style="border-radius: 0px !important;">
             <div class="p-4 border-bottom d-flex justify-content-between align-items-center" style="border-color: rgba(255,255,255,0.1) !important;">
-                <h5 class="fw-bold m-0" style="font-size: 1rem;">크루 정보 업데이트: <span id="modalNickname" class="text-highlight"></span></h5>
+                <h5 class="fw-bold m-0" style="font-size: 1rem;">데이터 업데이트: <span id="modalNickname" class="text-highlight"></span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="p-4" style="max-height: 70vh; overflow-y: auto;">
+            <div class="p-4">
                 <form id="editCrewForm">
                     <input type="hidden" id="editCrewId">
                     
                     <div class="mb-4">
-                        <label class="metallic-label">목표 기업 수정</label>
-                        <div class="checkbox-grid">
-                            {% for comp in ["네이버", "카카오", "라인", "쿠팡", "우아한형제들", "당근", "토스", "직방", "야놀자", "몰로코", "두나무", "센드버드", "금융권", "무신사"] %}
-                            <label class="custom-checkbox-label">
-                                <input type="checkbox" class="modal-company-checkbox" value="{{ comp }}">
-                                <span>{{ comp }}</span>
-                            </label>
-                            {% endfor %}
-                        </div>
-                        <div class="mt-3">
-                            <label class="metallic-label">기타 기업 직접 입력</label>
-                            <input type="text" id="modalOtherComp" class="metallic-input" placeholder="쉼표로 구분">
-                        </div>
+                        <label class="metallic-label">그룹 명칭</label>
+                        <input type="text" id="modalGroupName" class="metallic-input" required>
                     </div>
 
                     <div class="mb-4">
-                        <label class="metallic-label">기술 스택 수정</label>
-                        <div class="checkbox-grid">
-                            {% for tech in ["Java", "Kotlin", "Python", "Go", "Spring Boot", "NestJS", "FastAPI", "MySQL", "PostgreSQL", "Redis", "Docker", "Kubernetes", "AWS", "MSA", "Kafka"] %}
-                            <label class="custom-checkbox-label">
-                                <input type="checkbox" class="modal-tech-checkbox" value="{{ tech }}">
-                                <span style="font-size: 11px;">{{ tech }}</span>
-                            </label>
-                            {% endfor %}
-                        </div>
-                        <div class="mt-3">
-                            <label class="metallic-label">기타 기술 직접 입력</label>
-                            <input type="text" id="modalOtherTech" class="metallic-input" placeholder="쉼표로 구분">
-                        </div>
+                        <label class="metallic-label">관심 분야 (쉼표로 구분)</label>
+                        <input type="text" id="modalDomains" class="metallic-input">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="metallic-label">관심 기업 (쉼표로 구분)</label>
+                        <input type="text" id="modalCompanies" class="metallic-input">
                     </div>
 
                     <button type="submit" class="btn-primary-neon w-100" style="font-size: 0.85rem;">변경 사항 저장</button>
@@ -176,36 +142,27 @@
 <script>
     const editModal = new bootstrap.Modal(document.getElementById('editCrewModal'));
     
-    function openEditModal(id, nickname) {
+    function openEditModal(id, nickname, groupName, domains, companies) {
         document.getElementById('editCrewId').value = id;
         document.getElementById('modalNickname').innerText = nickname;
-        
-        // Reset Modal
-        document.querySelectorAll('.modal-company-checkbox, .modal-tech-checkbox').forEach(cb => {
-            cb.checked = false;
-        });
-        document.querySelectorAll('#modalOtherComp, #modalOtherTech').forEach(i => i.value = '');
-
+        document.getElementById('modalGroupName').value = groupName;
+        document.getElementById('modalDomains').value = domains || '';
+        document.getElementById('modalCompanies').value = companies || '';
         editModal.show();
     }
 
     document.getElementById('editCrewForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('editCrewId').value;
-        
-        const companies = [];
-        document.querySelectorAll('.modal-company-checkbox:checked').forEach(cb => companies.push(cb.value));
-        const otherComp = document.getElementById('modalOtherComp').value;
-        if (otherComp) otherComp.split(',').forEach(c => c.trim() && companies.push(c.trim()));
-
-        const tech_stacks = [];
-        document.querySelectorAll('.modal-tech-checkbox:checked').forEach(cb => tech_stacks.push(cb.value));
-        const otherTech = document.getElementById('modalOtherTech').value;
-        if (otherTech) otherTech.split(',').forEach(t => t.trim() && tech_stacks.push(t.trim()));
+        const payload = {
+            group_name: document.getElementById('modalGroupName').value,
+            survey_domains: document.getElementById('modalDomains').value,
+            survey_companies: document.getElementById('modalCompanies').value
+        };
 
         const response = await fetch(`/admin/crew/${id}`, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ companies, tech_stacks })
+            body: JSON.stringify(payload)
         });
         if (response.ok) window.location.reload();
     });
@@ -216,38 +173,15 @@
         if (response.ok) window.location.reload();
     }
 
-    document.getElementById('startMatchBtn').addEventListener('click', async () => {
-        if (!confirm('매칭 시퀀스를 실행하시겠습니까?')) return;
-        const response = await fetch('/admin/match', { method: 'POST' });
-        if (response.ok) window.location.reload();
-    });
-    document.getElementById('resetMatchBtn').addEventListener('click', async () => {
-        if (!confirm('시스템 데이터를 초기화하시겠습니까?')) return;
-        const response = await fetch('/admin/clear-match', { method: 'POST' });
-        if (response.ok) window.location.reload();
-    });
-
-    const filterCompany = document.getElementById('filterCompany');
     const filterGroup = document.getElementById('filterGroup');
     const crewRows = document.querySelectorAll('.crew-row');
 
-    function applyFilters() {
-        const companyVal = filterCompany.value;
-        const groupVal = filterGroup.value;
-
+    filterGroup.addEventListener('change', () => {
+        const val = filterGroup.value;
         crewRows.forEach(row => {
-            const rowCompanies = row.getAttribute('data-companies').split(',');
-            const rowGroup = row.getAttribute('data-group');
-
-            const companyMatch = !companyVal || rowCompanies.includes(companyVal);
-            const groupMatch = !groupVal || rowGroup === groupVal;
-
-            row.style.display = (companyMatch && groupMatch) ? '' : 'none';
+            row.style.display = (!val || row.getAttribute('data-group') === val) ? '' : 'none';
         });
-    }
-
-    filterCompany.addEventListener('change', applyFilters);
-    filterGroup.addEventListener('change', applyFilters);
+    });
 </script>
 
 <style>

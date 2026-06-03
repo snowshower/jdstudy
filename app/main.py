@@ -16,85 +16,65 @@ app = FastAPI(title="JD 분석 스터디 매칭 시스템")
 def seed_data():
     db = database.SessionLocal()
     try:
-        if db.query(models.Crew).count() == 0:
-            print("🚀 초기 데이터가 없습니다. 20명의 테스트 크루를 생성합니다...")
-            test_crews = [
-                # 1-4: 카카오/금융 중심 (Group 1 Target)
-                {"nickname": "카카오덕후", "password": "password123", "desired_job": "backend", 
-                 "companies": ["카카오", "금융권"],
-                 "tech_stacks": ["Java", "Spring Boot", "JPA", "MySQL"]},
-                {"nickname": "뱅크보이", "password": "password123", "desired_job": "backend", 
-                 "companies": ["카카오", "토스"],
-                 "tech_stacks": ["Java", "Spring Boot", "Redis", "Kafka"]},
-                {"nickname": "페이마스터", "password": "password123", "desired_job": "backend", 
-                 "companies": ["카카오", "금융권"],
-                 "tech_stacks": ["Java", "Kotlin", "Spring Boot", "MSA"]},
-                {"nickname": "금융꿈나무", "password": "password123", "desired_job": "backend", 
-                 "companies": ["금융권", "토스"],
-                 "tech_stacks": ["Java", "Spring Boot", "Querydsl", "JUnit5"]},
+        # 기존 데이터 삭제
+        db.query(models.Crew).delete()
+        db.commit()
 
-                # 5-8: 네이버/라인 중심 (Group 2 Target)
-                {"nickname": "네이버러버", "password": "password123", "desired_job": "backend", 
-                 "companies": ["네이버", "라인"],
-                 "tech_stacks": ["Java", "Spring Boot", "Docker", "Kubernetes"]},
-                {"nickname": "라인크루", "password": "password123", "desired_job": "backend", 
-                 "companies": ["라인", "네이버"],
-                 "tech_stacks": ["Java", "Go", "Docker", "AWS"]},
-                {"nickname": "그린팩토리", "password": "password123", "desired_job": "backend", 
-                 "companies": ["네이버", "카카오"],
-                 "tech_stacks": ["Java", "Spring Boot", "MSA", "Event-Driven"]},
-                {"nickname": "웹툰작가", "password": "password123", "desired_job": "backend", 
-                 "companies": ["네이버", "카카오"],
-                 "tech_stacks": ["Java", "Spring Boot", "Redis", "MongoDB"]},
+        print("🚀 기존 데이터를 삭제하고 17명의 실제 매칭 데이터를 적재합니다...")
+        
+        matching_data = [
+            {
+                "group_name": "핀테크 금융 인프라 A조",
+                "members": [
+                    {"nickname": "모카", "domains": "핀테크 / 금융, 커머스 / 로컬 플랫폼", "companies": "우아한형제들, 토스, 당근마켓, 네이버쇼핑, 카카오모빌리티"},
+                    {"nickname": "에덴", "domains": "핀테크 / 금융, 커머스 / 로컬 플랫폼", "companies": "토스뱅크, 우형, 당근, 네이버(쇼핑)"},
+                    {"nickname": "샤를", "domains": "핀테크 / 금융, 포털 / 글로벌 빅테크 / 인프라", "companies": "토스뱅크, 네이버 쇼핑, 현대자동차"},
+                    {"nickname": "이안", "domains": "핀테크 / 금융, 커머스 / 로컬 플랫폼, 컨텐츠 / 엔터테인먼트 / 미디어, 포털 / 글로벌 빅테크 / 인프라", "companies": "네이버, 카카오, 토스, 당근, 우아한형제들, 현대자동차"}
+                ]
+            },
+            {
+                "group_name": "핀테크 금융 인프라 B조",
+                "members": [
+                    {"nickname": "로지", "domains": "핀테크 / 금융, 커머스 / 로컬 플랫폼", "companies": "우아한형제들, 토스뱅크, 토스증권, 카카오뱅크, 네이버 파이낸셜"},
+                    {"nickname": "마이찬", "domains": "핀테크 / 금융, 커머스 / 로컬 플랫폼", "companies": "우아한형제, 딜리버리히어로, 네이버 파이낸셜, 네이버 클라우드, 토스뱅크, 토스증권, 카카오 뱅크"},
+                    {"nickname": "카야", "domains": "핀테크 / 금융, 커머스 / 로컬 플랫폼", "companies": "토스뱅크, 우아한형제들, 카카오뱅크"},
+                    {"nickname": "피노", "domains": "핀테크 / 금융, 커머스 / 로컬 플랫폼", "companies": "토스뱅크, 우아한형제들, 네이버, 카카오"},
+                    {"nickname": "스타크", "domains": "핀테크 / 금융, 커머스 / 로컬 플랫폼, 컨텐츠 / 엔터테인먼트 / 미디어, 포털 / 글로벌 빅테크 / 인프라", "companies": "토스"}
+                ]
+            },
+            {
+                "group_name": "올라운드 커머스 플랫폼조",
+                "members": [
+                    {"nickname": "바니", "domains": "커머스 / 로컬 플랫폼, 컨텐츠 / 엔터테인먼트 / 미디어, 포털 / 글로벌 빅테크 / 인프라", "companies": "우아한형제들, 당근, 네이버, 라인, 지그재그, 무신사, 올리브영, 야놀자"},
+                    {"nickname": "이삭", "domains": "커머스 / 로컬 플랫폼, 포털 / 글로벌 빅테크 / 인프라", "companies": "올리브영, 쿠팡"},
+                    {"nickname": "러키", "domains": "커머스 / 로컬 플랫폼", "companies": "당근"},
+                    {"nickname": "피즈", "domains": "커머스 / 로컬 플랫폼, 컨텐츠 / 엔터테인먼트 / 미디어, 포털 / 글로벌 빅테크 / 인프라", "companies": "네카라쿠배 토스"}
+                ]
+            },
+            {
+                "group_name": "컨텐츠 플랫폼 미디어 인프라조",
+                "members": [
+                    {"nickname": "소낙눈", "domains": "커머스 / 로컬 플랫폼, 컨텐츠 / 엔터테인먼트 / 미디어", "companies": "우아한형제들, 네이버, 치지직, 야놀자, 위버스컴퍼니, 디어유, 샌드박스네트워크, 레진엔터테인먼트"},
+                    {"nickname": "이산", "domains": "커머스 / 로컬 플랫폼, 컨텐츠 / 엔터테인먼트 / 미디어, 포털 / 글로벌 빅테크 / 인프라", "companies": "우아한형제들, 네이버웹툰, 밀리의서재, 교보문고, 티빙, 리디, 라프텔, 핏펫, 엠넷플러스, 네이버랩스, 라인, 쿠팡, 알라딘, NOL, 오늘의 집, 네이버 플러스 스토어, 가비아 등"},
+                    {"nickname": "초록", "domains": "컨텐츠 / 엔터테인먼트 / 미디어, 포털 / 글로벌 빅테크 / 인프라", "companies": "치지직, 우아한형제들, 토스 증권, 카카오웹툰, 네이버웹툰, 업스테이지, 네이버 검색, 네이버 쇼핑, 두나무, 놀유니버스, 야놀자, 여기어때"},
+                    {"nickname": "도우너", "domains": "커머스 / 로컬 플랫폼, 포털 / 글로벌 빅테크 / 인프라", "companies": "네이버, 카카오, 우아한형제들"}
+                ]
+            }
+        ]
 
-                # 9-12: 쿠팡/우형/당근 (커머스/로컬 중심)
-                {"nickname": "로켓배송", "password": "password123", "desired_job": "backend", 
-                 "companies": ["쿠팡", "우아한형제들"],
-                 "tech_stacks": ["Java", "Spring Boot", "Kafka", "Redis"]},
-                {"nickname": "배민라이더", "password": "password123", "desired_job": "backend", 
-                 "companies": ["우아한형제들", "쿠팡"],
-                 "tech_stacks": ["Java", "Spring Boot", "JPA", "Querydsl"]},
-                {"nickname": "당근이웃", "password": "password123", "desired_job": "backend", 
-                 "companies": ["당근", "우아한형제들"],
-                 "tech_stacks": ["Python", "FastAPI", "PostgreSQL", "Docker"]},
-                {"nickname": "커머스왕", "password": "password123", "desired_job": "backend", 
-                 "companies": ["쿠팡", "직방"],
-                 "tech_stacks": ["Java", "Spring Boot", "MSA", "AWS"]},
-
-                # 13-16: 글로벌/테크/유니콘 (몰로코/두나무/야놀자)
-                {"nickname": "광고천재", "password": "password123", "desired_job": "backend", 
-                 "companies": ["몰로코", "야놀자"],
-                 "tech_stacks": ["Go", "Python", "Kubernetes", "Docker"]},
-                {"nickname": "비트코인", "password": "password123", "desired_job": "backend", 
-                 "companies": ["두나무", "금융권"],
-                 "tech_stacks": ["Java", "Kotlin", "Spring Boot", "PostgreSQL"]},
-                {"nickname": "여행가자", "password": "password123", "desired_job": "backend", 
-                 "companies": ["야놀자", "직방"],
-                 "tech_stacks": ["Java", "Spring Boot", "Redis", "AWS"]},
-                {"nickname": "유니콘꿈", "password": "password123", "desired_job": "backend", 
-                 "companies": ["센드버드", "몰로코"],
-                 "tech_stacks": ["Python", "FastAPI", "PostgreSQL", "Kafka"]},
-
-                # 17-20: 혼합/기타
-                {"nickname": "파이썬술사", "password": "password123", "desired_job": "backend", 
-                 "companies": ["당근", "야놀자"],
-                 "tech_stacks": ["Python", "FastAPI", "Docker", "GitHub Actions"]},
-                {"nickname": "코틀린짱", "password": "password123", "desired_job": "backend", 
-                 "companies": ["카카오", "토스"],
-                 "tech_stacks": ["Kotlin", "Spring Boot", "JPA", "JUnit5"]},
-                {"nickname": "데브옵스", "password": "password123", "desired_job": "backend", 
-                 "companies": ["네이버", "쿠팡"],
-                 "tech_stacks": ["Go", "Kubernetes", "Terraform", "Jenkins"]},
-                {"nickname": "스프링장인", "password": "password123", "desired_job": "backend", 
-                 "companies": ["우아한형제들", "라인"],
-                 "tech_stacks": ["Java", "Spring Boot", "Querydsl", "RestAssured"]},
-            ]
-            
-            for crew_data in test_crews:
-                crew_in = schemas.CrewCreate(**crew_data)
+        for group in matching_data:
+            group_name = group["group_name"]
+            for member in group["members"]:
+                crew_in = schemas.CrewCreate(
+                    nickname=member["nickname"],
+                    password="1234",
+                    group_name=group_name,
+                    survey_domains=member["domains"],
+                    survey_companies=member["companies"]
+                )
                 crud.create_crew(db, crew_in)
-            
-            print("✅ 20명의 테스트 데이터 삽입이 완료되었습니다.")
+        
+        print(f"✅ 17명의 실제 데이터 적재가 완료되었습니다.")
     except Exception as e:
         print(f"❌ 데이터 삽입 중 오류 발생: {e}")
         db.rollback()
@@ -157,39 +137,40 @@ def login_page(request: Request):
         return RedirectResponse(url="/results-page")
     return templates.TemplateResponse(request=request, name="login.html", context={"user": user, "active_page": "login"})
 
-@app.get("/signup-page", response_class=HTMLResponse)
-def signup_page(request: Request):
+@app.get("/mypage", response_class=HTMLResponse)
+def mypage(request: Request, user_session = Depends(login_required)):
     user = get_current_user(request)
-    if user:
-        return RedirectResponse(url="/results-page")
-    return templates.TemplateResponse(request=request, name="signup.html", context={"user": user, "active_page": "signup"})
+    return templates.TemplateResponse(request=request, name="mypage.html", context={"user": user, "active_page": "mypage"})
 
 @app.get("/admin-page", response_class=HTMLResponse)
 def admin_page(request: Request, db: Session = Depends(database.get_db), admin = Depends(admin_required)):
     user = get_current_user(request)
     crews = crud.get_crews(db)
-    groups = crud.get_study_groups(db)
     
-    for crew in crews:
-        crew.company_list = [c.strip() for c in crew.companies.split(',')] if crew.companies else []
-        crew.tech_list = [t.strip() for t in crew.tech_stacks.split(',')] if crew.tech_stacks else []
+    # Process for template rendering
+    processed_crews = [schemas.CrewResponse.model_validate(c) for c in crews]
         
     return templates.TemplateResponse(
         request=request, 
         name="admin.html", 
-        context={"user": user, "crews": crews, "groups": groups, "active_page": "admin"}
+        context={"user": user, "crews": processed_crews, "active_page": "admin"}
     )
 
 @app.get("/results-page", response_class=HTMLResponse)
 def results_page(request: Request, db: Session = Depends(database.get_db), user_session = Depends(login_required)):
     user = get_current_user(request)
-    groups = crud.get_study_groups(db)
+    crews = crud.get_crews(db)
     
-    for group in groups:
-        for member in group.members:
-            crew_obj = member.crew if hasattr(member, 'crew') else member
-            crew_obj.company_list = [c.strip() for c in crew_obj.companies.split(',')] if crew_obj.companies else []
-            crew_obj.tech_list = [t.strip() for t in crew_obj.tech_stacks.split(',')] if crew_obj.tech_stacks else []
+    # Grouping crews by group_name
+    groups_dict = {}
+    for crew in crews:
+        processed_crew = schemas.CrewResponse.model_validate(crew)
+        g_name = crew.group_name
+        if g_name not in groups_dict:
+            groups_dict[g_name] = {"name": g_name, "members": []}
+        groups_dict[g_name]["members"].append(processed_crew)
+    
+    groups = list(groups_dict.values())
             
     return templates.TemplateResponse(
         request=request, 
@@ -224,21 +205,6 @@ def admin_login(login_data: schemas.LoginRequest, request: Request):
         detail="관리자 계정 정보가 잘못되었습니다."
     )
 
-@app.get("/admin/dashboard")
-def admin_dashboard(db: Session = Depends(database.get_db), admin = Depends(admin_required)):
-    crews = crud.get_crews(db)
-    return {"crews": crews}
-
-@app.post("/admin/match")
-def trigger_matching(db: Session = Depends(database.get_db), admin = Depends(admin_required)):
-    groups = crud.perform_matching(db)
-    return {"message": f"{len(groups)}개의 조가 편성되었습니다.", "groups": [schemas.GroupResponse.model_validate(g) for g in groups]}
-
-@app.post("/admin/clear-match")
-def admin_clear_matching(db: Session = Depends(database.get_db), admin = Depends(admin_required)):
-    crud.clear_matching(db)
-    return {"message": "매칭 데이터가 초기화되었습니다."}
-
 @app.put("/admin/crew/{crew_id}")
 def admin_update_crew(crew_id: int, update_data: schemas.CrewUpdateAdmin, db: Session = Depends(database.get_db), admin = Depends(admin_required)):
     crew = crud.update_crew_admin(db, crew_id, update_data)
@@ -253,25 +219,11 @@ def admin_delete_crew(crew_id: int, db: Session = Depends(database.get_db), admi
         raise HTTPException(status_code=404, detail="크루를 찾을 수 없습니다.")
     return {"message": "크루가 삭제되었습니다."}
 
-@app.post("/admin/move-member")
-def admin_move_member(request: schemas.MoveMemberRequest, db: Session = Depends(database.get_db), admin = Depends(admin_required)):
-    crud.move_member(db, request.crew_id, request.new_group_id)
-    return {"message": "그룹 이동이 완료되었습니다."}
-
-@app.post("/register", response_model=schemas.CrewResponse, status_code=status.HTTP_201_CREATED)
-def register_crew(crew: schemas.CrewCreate, db: Session = Depends(database.get_db)):
-    db_crew = crud.get_crew_by_nickname(db, nickname=crew.nickname)
-    if db_crew:
-        raise HTTPException(
-            status_code=400,
-            detail="이미 등록된 크루명입니다. 로그인해 주세요."
-        )
-    return crud.create_crew(db=db, crew=crew)
-
 @app.post("/login")
 def login(login_data: schemas.LoginRequest, request: Request, db: Session = Depends(database.get_db)):
     db_crew = crud.get_crew_by_nickname(db, nickname=login_data.nickname)
-    if not db_crew or not auth.verify_password(login_data.password, db_crew.hashed_password):
+    # Check if user exists and verify password (using the password column which stores hash)
+    if not db_crew or not auth.verify_password(login_data.password, db_crew.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="닉네임 또는 비밀번호가 잘못되었습니다."
@@ -281,20 +233,19 @@ def login(login_data: schemas.LoginRequest, request: Request, db: Session = Depe
     request.session["user"] = {"nickname": db_crew.nickname, "id": db_crew.id, "is_admin": False}
     return {"message": "로그인 성공"}
 
+@app.post("/api/update-password")
+def update_password(data: schemas.PasswordUpdate, request: Request, db: Session = Depends(database.get_db), user_session = Depends(login_required)):
+    db_crew = crud.get_crew(db, user_session["id"])
+    if not db_crew or not auth.verify_password(data.current_password, db_crew.password):
+        raise HTTPException(status_code=400, detail="현재 비밀번호가 일치하지 않습니다.")
+    
+    crud.update_crew_password(db, user_session["id"], data.new_password)
+    return {"message": "비밀번호가 성공적으로 변경되었습니다."}
+
 @app.post("/logout")
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-
-@app.get("/results", response_model=schemas.MatchingResultResponse)
-def matching_results(db: Session = Depends(database.get_db), user = Depends(login_required)):
-    groups = crud.get_study_groups(db)
-    if not groups:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="현재 매칭 준비 중입니다."
-        )
-    return {"groups": groups}
 
 @app.get("/board", response_model=list[schemas.InsightPostResponse])
 def list_insight_posts(db: Session = Depends(database.get_db), user = Depends(login_required)):

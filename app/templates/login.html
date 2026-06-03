@@ -26,7 +26,7 @@
                     <form id="crewLoginForm">
                         <div class="mb-3">
                             <label class="metallic-label">닉네임 아이디</label>
-                            <input type="text" class="metallic-input" name="nickname" placeholder="아이디 입력" required>
+                            <input type="text" class="metallic-input" name="nickname" placeholder="닉네임 입력" required>
                         </div>
                         <div class="mb-4">
                             <label class="metallic-label">비밀번호</label>
@@ -53,7 +53,7 @@
             </div>
 
             <div class="mt-4 text-center">
-                <p class="small" style="font-size: 0.75rem; color: var(--text-muted);">새로운 크루이신가요? <a href="/signup-page" class="fw-bold" style="color: var(--accent-text);">회원가입</a></p>
+                <p class="small" style="font-size: 0.75rem; color: var(--text-muted);">미리 등록된 닉네임과 초기 비밀번호(1234)로 접속하세요.</p>
             </div>
         </div>
     </div>
@@ -85,7 +85,10 @@
                 body: JSON.stringify(jsonData),
             });
             if (response.ok) { window.location.href = redirectUrl; }
-            else { alert('오류: 접근이 거부되었습니다.'); }
+            else { 
+                const errorData = await response.json();
+                alert('오류: ' + (errorData.detail || '접근이 거부되었습니다.')); 
+            }
         });
     }
     handleLogin('crewLoginForm', '/login', '/results-page');

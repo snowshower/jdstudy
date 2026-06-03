@@ -6,10 +6,10 @@
 <div class="text-center mb-5 mt-5">
     <span class="neon-badge mb-3">매칭 프로토콜 활성화</span>
     <h1 class="fw-bold text-gradient" style="font-size: 3rem; letter-spacing: -2px; color: #ffffff;">매칭 결과 리포트</h1>
-    <p class="small" style="color: var(--text-muted);">정예 테크 크루가 최적의 조합으로 편성되었습니다.</p>
+    <p class="small" style="color: var(--text-muted);">수동 매칭으로 확정된 정예 테크 크루 명단입니다.</p>
 </div>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+<div class="row row-cols-1 row-cols-md-2 g-4">
     {% for group in groups %}
     {% set is_my_group = false %}
     {% for member in group.members %}
@@ -18,69 +18,49 @@
         {% endif %}
     {% endfor %}
 
-    <div class="col">
+    <div class="col-md-6 mb-4">
         <div class="dashboard-card h-100 {% if is_my_group %}active-connection{% endif %}" style="background: var(--bg-panel); border: var(--border-metallic);">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="fw-bold m-0" style="font-size: 1.1rem; letter-spacing: -0.5px; color: #ffffff;">{{ group.name }}</h3>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold m-0" style="font-size: 1.25rem; letter-spacing: -0.5px; color: var(--accent-text);">{{ group.name }}</h3>
                 {% if is_my_group %}
                     <span class="neon-badge" style="background: var(--accent-glow); color: white; border-color: transparent; font-size: 0.65rem;">나의 그룹</span>
                 {% endif %}
             </div>
 
-            <div class="mb-4">
-                <span class="label d-block mb-2">공통 키워드 (주요 관심사)</span>
-                <div class="d-flex flex-wrap gap-2">
-                    {% if group.common_companies %}
-                        {% for comp in group.common_companies.split(',') %}
-                            {% if comp.strip() %}
-                            <span class="company-tag">{{ comp.strip() }}</span>
-                            {% endif %}
+            <div class="table-container" style="margin-top: 0; background: transparent; border: none; box-shadow: none;">
+                <table class="crew-table" style="width: 100%;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <th style="padding: 10px 0; font-size: 0.75rem; color: var(--text-muted);">크루</th>
+                            <th style="padding: 10px 0; font-size: 0.75rem; color: var(--text-muted);">관심 분야</th>
+                            <th style="padding: 10px 0; font-size: 0.75rem; color: var(--text-muted); text-align: right;">관심 기업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in group.members %}
+                        <tr>
+                            <td class="nickname {% if user and member.nickname == user.nickname %}text-highlight{% endif %}" style="color: #ffffff; font-weight: 600; width: 80px;">
+                                {{ member.nickname }}
+                                {% if user and member.nickname == user.nickname %}<span class="ms-1 small opacity-50" style="font-size: 0.65rem;">(나)</span>{% endif %}
+                            </td>
+                            <td style="padding: 14px 10px !important;">
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for domain in member.domain_list %}
+                                        <span class="neon-badge" style="font-size: 0.6rem; padding: 2px 6px;">{{ domain }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td class="text-end" style="padding: 14px 0 !important;">
+                                <div class="d-flex flex-wrap gap-1 justify-content-end">
+                                    {% for company in member.company_list %}
+                                        <span class="company-tag" style="font-size: 0.6rem; padding: 2px 6px;">{{ company }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
                         {% endfor %}
-                    {% endif %}
-                    {% if group.common_keywords %}
-                        {% for kw in group.common_keywords.split(',') %}
-                            {% if kw.strip() %}
-                            <span class="neon-badge" style="font-size: 0.65rem;">{{ kw.strip() }}</span>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="mt-4">
-                <span class="label d-block mb-3">크루 명단</span>
-                <div class="table-container" style="margin-top: 0; background: transparent; border: none; box-shadow: none;">
-                    <table class="crew-table" style="width: 100%;">
-                        <tbody>
-                            {% for member in group.members %}
-                            <tr>
-                                <td class="nickname {% if user and member.nickname == user.nickname %}text-highlight{% endif %}" style="color: #ffffff; font-weight: 600;">
-                                    {{ member.nickname }}
-                                    {% if user and member.nickname == user.nickname %}<span class="ms-1 small opacity-50" style="font-size: 0.7rem;">(나)</span>{% endif %}
-                                </td>
-                                <td class="keywords" style="font-size: 0.75rem; color: var(--text-muted); padding-left: 10px;">
-                                    <div class="d-flex flex-wrap gap-1">
-                                        {% for tech in member.tech_list %}
-                                            <span class="neon-badge" style="font-size: 0.6rem; padding: 2px 6px;">{{ tech }}</span>
-                                        {% endfor %}
-                                        {% if not member.tech_list %}범용{% endif %}
-                                    </div>
-                                </td>
-                                <td class="text-end">
-                                    <div class="d-flex flex-wrap gap-1 justify-content-end">
-                                        {% for company in member.company_list %}
-                                            <span class="company-tag" style="font-size: 0.6rem; padding: 2px 6px;">{{ company }}</span>
-                                        {% endfor %}
-                                        {% if not member.company_list %}
-                                            <span class="company-tag" style="font-size: 0.6rem; padding: 2px 6px;">미지정</span>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -88,7 +68,7 @@
     <div class="col-12 text-center">
         <div class="dashboard-card py-5">
             <h3 style="font-size: 1rem; color: var(--text-muted);">현재 분석 중인 데이터가 없습니다.</h3>
-            <p class="small opacity-50" style="font-size: 0.8rem;">관리자가 매칭을 실행할 때까지 대기해 주세요.</p>
+            <p class="small opacity-50" style="font-size: 0.8rem;">관리자 데이터 적재를 대기해 주세요.</p>
         </div>
     </div>
     {% endfor %}
@@ -104,12 +84,6 @@
     }
     .crew-table td {
         border-bottom: 1px solid rgba(255,255,255,0.05) !important;
-        padding: 14px 0 !important;
-    }
-    .crew-table td.keywords {
-        padding-left: 15px !important;
-        font-size: 0.75rem !important;
-        line-height: 1.4;
     }
     .crew-table tr:last-child td {
         border-bottom: none !important;

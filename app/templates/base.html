@@ -24,9 +24,11 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mx-auto">
-                    <li class="nav-item"><a class="nav-link {% if active_page == 'signup' %}active{% endif %}" href="/signup-page">신청하기</a></li>
                     <li class="nav-item"><a class="nav-link {% if active_page == 'results' %}active{% endif %}" href="/results-page">매칭현황</a></li>
                     <li class="nav-item"><a class="nav-link {% if active_page == 'board' %}active{% endif %}" href="/board-page">인사이트</a></li>
+                    {% if user %}
+                    <li class="nav-item"><a class="nav-link {% if active_page == 'mypage' %}active{% endif %}" href="/mypage">마이페이지</a></li>
+                    {% endif %}
                     {% if user and user.is_admin %}
                     <li class="nav-item"><a class="nav-link {% if active_page == 'admin' %}active{% endif %}" href="/admin-page">관리자</a></li>
                     {% endif %}
@@ -39,7 +41,6 @@
                         </form>
                     {% else %}
                         <a href="/login-page" class="nav-link m-0">로그인</a>
-                        <a href="/signup-page" class="btn-primary-neon">시작하기 <i class="bi bi-chevron-right fs-small"></i></a>
                     {% endif %}
                 </div>
             </div>
