@@ -31,29 +31,27 @@
                 <table class="crew-table" style="width: 100%;">
                     <thead>
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                            <th style="padding: 10px 0; font-size: 0.75rem; color: var(--text-muted);">크루</th>
-                            <th style="padding: 10px 0; font-size: 0.75rem; color: var(--text-muted);">관심 분야</th>
-                            <th style="padding: 10px 0; font-size: 0.75rem; color: var(--text-muted); text-align: right;">관심 기업</th>
+                            <th style="padding: 10px 0; font-size: 0.75rem; color: var(--text-muted); width: 40%;">크루 (클릭시 목표기업)</th>
+                            <th style="padding: 10px 0; font-size: 0.75rem; color: var(--text-muted); width: 60%;">관심 분야</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for member in group.members %}
                         <tr>
-                            <td class="nickname {% if user and member.nickname == user.nickname %}text-highlight{% endif %}" style="color: #ffffff; font-weight: 600; width: 80px;">
+                            <td class="nickname {% if user and member.nickname == user.nickname %}text-highlight{% endif %}" 
+                                style="color: #ffffff; font-weight: 600; cursor: pointer; vertical-align: middle;"
+                                data-bs-toggle="popover" 
+                                data-bs-trigger="click"
+                                data-bs-placement="top"
+                                title="목표 기업"
+                                data-bs-content="{% for company in member.company_list %}{{ company }}{% if not loop.last %}, {% endif %}{% endfor %}{% if not member.company_list %}미지정{% endif %}">
                                 {{ member.nickname }}
                                 {% if user and member.nickname == user.nickname %}<span class="ms-1 small opacity-50" style="font-size: 0.65rem;">(나)</span>{% endif %}
                             </td>
-                            <td style="padding: 14px 10px !important;">
-                                <div class="d-flex flex-wrap gap-1">
+                            <td style="padding: 14px 0 !important; vertical-align: middle;">
+                                <div class="interest-grid">
                                     {% for domain in member.domain_list %}
                                         <span class="neon-badge" style="font-size: 0.6rem; padding: 2px 6px;">{{ domain }}</span>
-                                    {% endfor %}
-                                </div>
-                            </td>
-                            <td class="text-end" style="padding: 14px 0 !important;">
-                                <div class="d-flex flex-wrap gap-1 justify-content-end">
-                                    {% for company in member.company_list %}
-                                        <span class="company-tag" style="font-size: 0.6rem; padding: 2px 6px;">{{ company }}</span>
                                     {% endfor %}
                                 </div>
                             </td>
@@ -88,5 +86,49 @@
     .crew-table tr:last-child td {
         border-bottom: none !important;
     }
+    .interest-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+        justify-items: start;
+    }
+    /* Popover Styling */
+    .popover {
+        background-color: var(--bg-panel);
+        border: var(--border-metallic);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .popover-header {
+        background-color: rgba(255,255,255,0.05);
+        color: var(--accent-text);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-weight: 700;
+        font-size: 0.75rem;
+    }
+    .popover-body {
+        color: #ffffff;
+        font-size: 0.8rem;
+    }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Bootstrap Popovers
+    document.addEventListener('DOMContentLoaded', function () {
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl)
+        });
+
+        // Close popover when clicking outside
+        document.addEventListener('click', function (e) {
+            popoverTriggerList.forEach(function (el) {
+                if (!el.contains(e.target)) {
+                    bootstrap.Popover.getInstance(el).hide();
+                }
+            });
+        }, true);
+    });
+</script>
 {% endblock %}
