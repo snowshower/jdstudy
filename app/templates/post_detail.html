@@ -54,11 +54,48 @@
             <!-- Actions -->
             {% if user and (post.author_nickname == user.nickname or user.is_admin) %}
             <div class="mt-5 pt-4 border-top d-flex justify-content-end gap-3" style="border-color: rgba(255,255,255,0.1) !important;">
+                {% if post.author_nickname == user.nickname %}
+                <button class="btn-secondary-metallic" onclick="openEditModal()">
+                    인사이트 수정
+                </button>
+                {% endif %}
                 <button class="btn-secondary-metallic" style="border-color: rgba(255,50,50,0.3); color: #ff5555 !important;" onclick="deletePost({{ post.id }})">
                     인사이트 삭제
                 </button>
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Edit Post Modal -->
+<div class="modal fade" id="editPostModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content dashboard-card p-0 shadow-lg" style="border-radius: 0px !important;">
+            <div class="p-4 border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                <h5 class="fw-bold m-0" style="font-size: 1.1rem;">인사이트 수정</h5>
+            </div>
+            <div class="p-4">
+                <form id="editPostForm">
+                    <div class="mb-3">
+                        <label class="metallic-label">인사이트 제목</label>
+                        <input type="text" id="editTitle" class="metallic-input" value="{{ post.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="metallic-label">참조 URL</label>
+                        <input type="url" id="editLink" class="metallic-input" value="{{ post.link }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="metallic-label">카테고리 태그</label>
+                        <input type="text" id="editTag" class="metallic-input" value="{{ post.tag if post.tag else '' }}">
+                    </div>
+                    <div class="mb-4">
+                        <label class="metallic-label">상세 설명</label>
+                        <textarea id="editContent" class="metallic-input" rows="8" style="resize: none;">{{ post.content }}</textarea>
+                    </div>
+                    <button type="submit" class="btn-primary-neon w-100 py-3" style="font-size: 0.9rem;">업데이트 사항 저장</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -76,6 +113,39 @@
 
 {% block scripts %}
 <script>
+    const editModal = new bootstrap.Modal(document.getElementById('editPostModal'));
+    
+    function openEditModal() {
+        editModal.show();
+    }
+
+    document.getElementById('editPostForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            title: document.getElementById('editTitle').value,
+            link: document.getElementById('editLink').value,
+            tag: document.getElementById('editTag').value,
+            content: document.getElementById('editContent').value
+        };
+
+        try {
+            const response = await fetch(`/board/{{ post.id }}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('수정 실패: ' + error.detail);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
     async function deletePost(postId) {
         if (!confirm('정말로 이 인사이트를 영구 삭제하시겠습니까?')) return;
         try {

@@ -3,7 +3,7 @@
 {% block title %}인사이트 게시판 - JD-MATCH{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-end mb-5 border-bottom pb-4" style="border-color: rgba(255,255,255,0.1) !important;">
+<div class="d-flex justify-content-between align-items-end mb-4 border-bottom pb-4" style="border-color: rgba(255,255,255,0.1) !important;">
     <div>
         <h2 class="fw-bold m-0 text-gradient" style="font-size: 2rem; letter-spacing: -1px;">지식 아카이브</h2>
         <p class="small mt-1 mb-0" style="color: var(--text-muted);">크루들이 분석한 JD 인사이트와 기술 로그를 확인하세요.</p>
@@ -11,6 +11,20 @@
     <button class="btn-primary-neon" data-bs-toggle="modal" data-bs-target="#writePostModal">
         <i class="bi bi-plus-lg"></i> 새 인사이트 공유
     </button>
+</div>
+
+<!-- Search Bar -->
+<div class="mb-4">
+    <form action="/board-page" method="get" class="d-flex gap-2">
+        <div class="position-relative flex-fill">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input type="text" name="search" class="metallic-input ps-5" placeholder="제목 또는 내용으로 검색..." value="{{ search if search else '' }}">
+        </div>
+        <button type="submit" class="btn-secondary-metallic px-4">검색</button>
+        {% if search %}
+            <a href="/board-page" class="btn-secondary-metallic px-3 d-flex align-items-center">초기화</a>
+        {% endif %}
+    </form>
 </div>
 
 <div class="table-container">
@@ -49,13 +63,22 @@
                     <span style="color: var(--text-muted); opacity: 0.7; font-size: 0.8rem;">{{ post.created_at.strftime('%Y.%m.%d') }}</span>
                 </td>
                 <td class="text-center">
-                    {% if user and (post.author_nickname == user.nickname or user.is_admin) %}
-                    <button class="btn-secondary-metallic" style="padding: 4px 12px; font-size: 0.65rem;" onclick="deletePost({{ post.id }})">
-                        삭제
-                    </button>
-                    {% else %}
-                    <span style="color: var(--text-muted); opacity: 0.25;">-</span>
-                    {% endif %}
+                    <div class="d-flex gap-1 justify-content-center">
+                        {% if user and post.author_nickname == user.nickname %}
+                        <button class="btn-secondary-metallic" style="padding: 4px 10px; font-size: 0.65rem;" 
+                                onclick='openEditModal({{ post.id }}, "{{ post.title }}", "{{ post.link }}", "{{ post.tag if post.tag else "" }}", `{{ post.content if post.content else "" }}`)'>
+                            수정
+                        </button>
+                        {% endif %}
+                        {% if user and (post.author_nickname == user.nickname or user.is_admin) %}
+                        <button class="btn-secondary-metallic" style="padding: 4px 10px; font-size: 0.65rem; border-color: rgba(255, 100, 100, 0.3);" onclick="deletePost({{ post.id }})">
+                            삭제
+                        </button>
+                        {% endif %}
+                        {% if not (user and (post.author_nickname == user.nickname or user.is_admin)) %}
+                        <span style="color: var(--text-muted); opacity: 0.25;">-</span>
+                        {% endif %}
+                    </div>
                 </td>
             </tr>
             {% else %}
@@ -71,6 +94,23 @@
         </tbody>
     </table>
 </div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav class="mt-5 d-flex justify-content-center">
+    <ul class="pagination gap-2">
+        {% for p in range(1, total_pages + 1) %}
+        <li class="page-item">
+            <a class="page-link dashboard-card px-3 py-2 border-0 {% if p == current_page %}active-page{% endif %}" 
+               href="/board-page?page={{ p }}{% if search %}&search={{ search }}{% endif %}"
+               style="background: rgba(255,255,255,0.05); color: #fff; font-size: 0.85rem;">
+                {{ p }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</nav>
+{% endif %}
 
 <!-- Write Post Modal -->
 <div class="modal fade" id="writePostModal" tabindex="-1">
@@ -103,6 +143,49 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Post Modal -->
+<div class="modal fade" id="editPostModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content dashboard-card p-0 shadow-lg" style="border-radius: 0px !important;">
+            <div class="p-4 border-bottom" style="border-color: rgba(255,255,255,0.1) !important;">
+                <h5 class="fw-bold m-0" style="font-size: 1.1rem;">인사이트 수정</h5>
+            </div>
+            <div class="p-4">
+                <form id="editPostForm">
+                    <input type="hidden" id="editPostId">
+                    <div class="mb-3">
+                        <label class="metallic-label">인사이트 제목</label>
+                        <input type="text" id="editTitle" class="metallic-input" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="metallic-label">참조 URL</label>
+                        <input type="url" id="editLink" class="metallic-input" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="metallic-label">카테고리 태그</label>
+                        <input type="text" id="editTag" class="metallic-input">
+                    </div>
+                    <div class="mb-4">
+                        <label class="metallic-label">상세 설명</label>
+                        <textarea id="editContent" class="metallic-input" rows="4" style="resize: none;"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary-neon w-100 py-3" style="font-size: 0.9rem;">업데이트 사항 저장</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .active-page {
+        background: var(--accent-glow) !important;
+        box-shadow: 0 0 15px rgba(157, 124, 255, 0.4);
+    }
+    .pagination .page-link:hover:not(.active-page) {
+        background: rgba(255,255,255,0.15) !important;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -129,6 +212,45 @@
         } catch (err) {
             console.error(err);
             alert('네트워크 연결 실패');
+        }
+    });
+
+    const editModal = new bootstrap.Modal(document.getElementById('editPostModal'));
+    
+    function openEditModal(id, title, link, tag, content) {
+        document.getElementById('editPostId').value = id;
+        document.getElementById('editTitle').value = title;
+        document.getElementById('editLink').value = link;
+        document.getElementById('editTag').value = tag;
+        document.getElementById('editContent').value = content;
+        editModal.show();
+    }
+
+    document.getElementById('editPostForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('editPostId').value;
+        const payload = {
+            title: document.getElementById('editTitle').value,
+            link: document.getElementById('editLink').value,
+            tag: document.getElementById('editTag').value,
+            content: document.getElementById('editContent').value
+        };
+
+        try {
+            const response = await fetch(`/board/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                alert('수정 실패: ' + error.detail);
+            }
+        } catch (err) {
+            console.error(err);
         }
     });
 

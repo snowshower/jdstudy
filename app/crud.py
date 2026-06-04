@@ -57,8 +57,23 @@ def update_crew_password(db: Session, crew_id: int, new_password: str):
     return db_crew
 
 # Insight Board
-def get_insight_posts(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.InsightPost).order_by(models.InsightPost.created_at.desc()).offset(skip).limit(limit).all()
+def get_insight_posts(db: Session, skip: int = 0, limit: int = 100, search: str = None):
+    query = db.query(models.InsightPost)
+    if search:
+        query = query.filter(
+            (models.InsightPost.title.contains(search)) | 
+            (models.InsightPost.content.contains(search))
+        )
+    return query.order_by(models.InsightPost.created_at.desc()).offset(skip).limit(limit).all()
+
+def count_insight_posts(db: Session, search: str = None):
+    query = db.query(models.InsightPost)
+    if search:
+        query = query.filter(
+            (models.InsightPost.title.contains(search)) | 
+            (models.InsightPost.content.contains(search))
+        )
+    return query.count()
 
 def get_insight_post(db: Session, post_id: int):
     return db.query(models.InsightPost).filter(models.InsightPost.id == post_id).first()

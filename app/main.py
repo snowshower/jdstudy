@@ -179,10 +179,26 @@ def results_page(request: Request, db: Session = Depends(database.get_db), user_
     )
 
 @app.get("/board-page", response_class=HTMLResponse)
-def board_page(request: Request, db: Session = Depends(database.get_db), user_session = Depends(login_required)):
+def board_page(request: Request, db: Session = Depends(database.get_db), user_session = Depends(login_required), page: int = 1, search: str = None):
     user = get_current_user(request)
-    posts = crud.get_insight_posts(db)
-    return templates.TemplateResponse(request=request, name="board.html", context={"user": user, "posts": posts, "active_page": "board"})
+    limit = 10
+    skip = (page - 1) * limit
+    posts = crud.get_insight_posts(db, skip=skip, limit=limit, search=search)
+    total_posts = crud.count_insight_posts(db, search=search)
+    total_pages = (total_posts + limit - 1) // limit
+    
+    return templates.TemplateResponse(
+        request=request, 
+        name="board.html", 
+        context={
+            "user": user, 
+            "posts": posts, 
+            "active_page": "board",
+            "current_page": page,
+            "total_pages": total_pages,
+            "search": search
+        }
+    )
 
 @app.get("/board-page/{post_id}", response_class=HTMLResponse)
 def post_detail_page(post_id: int, request: Request, db: Session = Depends(database.get_db), user_session = Depends(login_required)):
